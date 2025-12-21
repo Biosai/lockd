@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateDepositForm } from "@/components/app/create-deposit-form";
 import { SentDeposits } from "@/components/app/sent-deposits";
 import { ReceivedDeposits } from "@/components/app/received-deposits";
+import { StatsCards } from "@/components/app/stats-cards";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { motion } from "framer-motion";
@@ -50,6 +51,8 @@ export default function AppPage() {
                   {t("dashboard.description")}
                 </p>
               </div>
+
+              <StatsCards />
 
               <Tabs defaultValue="create" className="w-full">
                 <TabsList className="w-full grid grid-cols-3">

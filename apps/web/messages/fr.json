@@ -203,6 +203,11 @@
   },
   "common": {
     "loading": "Chargement..."
+  },
+  "stats": {
+    "totalDeposits": "Total des Dépôts",
+    "valueLocked": "Valeur Verrouillée",
+    "valueClaimed": "Valeur Réclamée"
   }
 }
 

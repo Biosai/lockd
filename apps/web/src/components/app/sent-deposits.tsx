@@ -1,14 +1,14 @@
 "use client";
 
-import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { formatEther, formatUnits, type Address } from "viem";
+import { useAccount, useChainId, useReadContract, useSendTransaction, useWaitForTransactionReceipt, useReadContracts } from "wagmi";
+import { formatEther, formatUnits, encodeFunctionData, type Address } from "viem";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, ERC20_ABI, isValidContractAddress } from "@/lib/contracts";
 import { shortenAddress, formatDeadline, formatDate } from "@/lib/utils";
-import { Clock, Loader2, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Clock, Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 interface Deposit {
@@ -27,26 +27,80 @@ export function SentDeposits() {
   const chainId = useChainId();
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
   const t = useTranslations("sentDeposits");
-  
-  const [deposits, setDeposits] = useState<Deposit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: depositCount } = useReadContract({
+  const isContractConfigured = isValidContractAddress(contractAddress);
+
+  // Get total deposit count
+  const { data: depositCount, isLoading: isLoadingCount } = useReadContract({
     address: contractAddress,
     abi: CLAIMABLE_ABI,
     functionName: "depositCount",
+    query: {
+      enabled: isContractConfigured,
+    },
   });
 
-  // In a real implementation, you'd use events or an indexer to get user's deposits
-  // For demo purposes, we'll show a placeholder UI
-  
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Create array of deposit IDs to fetch
+  const depositIds = useMemo(() => {
+    if (!depositCount) return [];
+    const count = Number(depositCount);
+    return Array.from({ length: count }, (_, i) => BigInt(i));
+  }, [depositCount]);
 
-  if (isLoading) {
+  // Fetch all deposit details
+  const { data: depositsData, isLoading: isLoadingDeposits } = useReadContracts({
+    contracts: depositIds.map((id) => ({
+      address: contractAddress,
+      abi: CLAIMABLE_ABI,
+      functionName: 'getDeposit' as const,
+      args: [id],
+    })),
+    query: {
+      enabled: depositIds.length > 0 && isContractConfigured,
+    },
+  });
+
+  // Filter deposits where user is the depositor
+  const deposits: Deposit[] = useMemo(() => {
+    if (!depositsData || !address) return [];
+    
+    return depositsData
+      .map((result, index) => {
+        if (result.status === 'success' && result.result) {
+          const [depositor, claimant, token, amount, deadline, claimed, title] = result.result as [string, string, string, bigint, bigint, boolean, string];
+          return {
+            id: Number(depositIds[index]),
+            depositor,
+            claimant,
+            token,
+            amount,
+            deadline,
+            claimed,
+            title,
+          };
+        }
+        return null;
+      })
+      .filter((d): d is Deposit => d !== null && d.depositor.toLowerCase() === address.toLowerCase());
+  }, [depositsData, depositIds, address]);
+
+  if (!isContractConfigured) {
+    return (
+      <Card className="border-border/40">
+        <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+          </div>
+          <h3 className="font-semibold">Contract not configured</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This network is not yet supported.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoadingCount || isLoadingDeposits) {
     return (
       <Card className="border-border/40">
         <CardContent className="flex items-center justify-center py-20">
@@ -87,14 +141,20 @@ interface DepositCardProps {
 }
 
 export function DepositCard({ deposit, type }: DepositCardProps) {
+  const { address: account } = useAccount();
   const chainId = useChainId();
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
   const isContractConfigured = isValidContractAddress(contractAddress);
   const tSent = useTranslations("sentDeposits");
   const tReceived = useTranslations("receivedDeposits");
   
-  const { writeContract, data: hash, isPending } = useWriteContract();
+  const { sendTransaction, data: hash, isPending, error } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  // Debug: log any errors
+  if (error) {
+    console.error("SendTransaction error:", error);
+  }
 
   const isETH = deposit.token === "0x0000000000000000000000000000000000000000";
   const tokenAddress = !isETH ? deposit.token as Address : undefined;
@@ -131,21 +191,47 @@ export function DepositCard({ deposit, type }: DepositCardProps) {
   const canClaim = type === "received" && !deposit.claimed;
 
   const handleAction = () => {
-    if (!isContractConfigured) return;
+    console.log("handleAction called", { 
+      isContractConfigured, 
+      contractAddress, 
+      canRefund, 
+      canClaim, 
+      depositId: deposit.id,
+      account,
+      chainId 
+    });
+    
+    if (!isContractConfigured) {
+      console.error("Contract not configured for chain:", chainId);
+      return;
+    }
+
+    if (!account) {
+      console.error("No account connected");
+      return;
+    }
     
     if (canRefund) {
-      writeContract({
-        address: contractAddress,
+      console.log("Calling refund...");
+      const data = encodeFunctionData({
         abi: CLAIMABLE_ABI,
         functionName: "refund",
         args: [BigInt(deposit.id)],
       });
+      sendTransaction({
+        to: contractAddress,
+        data,
+      });
     } else if (canClaim) {
-      writeContract({
-        address: contractAddress,
+      console.log("Calling claim...");
+      const data = encodeFunctionData({
         abi: CLAIMABLE_ABI,
         functionName: "claim",
         args: [BigInt(deposit.id)],
+      });
+      sendTransaction({
+        to: contractAddress,
+        data,
       });
     }
   };
@@ -223,6 +309,13 @@ export function DepositCard({ deposit, type }: DepositCardProps) {
               {tSent("canRefundAfter")}
             </span>
           )}
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 flex items-center gap-2 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          <span>Error: {error.message}</span>
         </div>
       )}
 

@@ -203,6 +203,11 @@
   },
   "common": {
     "loading": "Loading..."
+  },
+  "stats": {
+    "totalDeposits": "Total Deposits",
+    "valueLocked": "Value Locked",
+    "valueClaimed": "Value Claimed"
   }
 }
 

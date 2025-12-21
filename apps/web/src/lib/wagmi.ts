@@ -1,47 +1,43 @@
-import { createConfig, http } from "wagmi";
+import { createConfig, http, cookieStorage, createStorage } from "wagmi";
 import { arbitrum, arbitrumSepolia } from "wagmi/chains";
-import { connectorsForWallets } from "@rainbow-me/rainbowkit";
-import {
-  metaMaskWallet,
-  coinbaseWallet,
-  walletConnectWallet,
-  rainbowWallet,
-} from "@rainbow-me/rainbowkit/wallets";
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo";
+// Build RPC URLs with Alchemy if available (works on both server and client)
+const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 
-const connectors = connectorsForWallets(
-  [
-    {
-      groupName: "Popular",
-      wallets: [metaMaskWallet, coinbaseWallet, walletConnectWallet, rainbowWallet],
-    },
-  ],
-  {
-    appName: "Claimable",
-    projectId,
-  }
-);
+const arbitrumRpc = alchemyKey 
+  ? `https://arb-mainnet.g.alchemy.com/v2/${alchemyKey}`
+  : undefined;
 
-// Mainnet-only config (default)
-export const mainnetConfig = createConfig({
-  connectors,
-  chains: [arbitrum],
-  transports: {
-    [arbitrum.id]: http(),
-  },
-  ssr: true,
+const arbitrumSepoliaRpc = alchemyKey
+  ? `https://arb-sepolia.g.alchemy.com/v2/${alchemyKey}`
+  : undefined;
+
+// Storage configuration for persisting wallet connection (SSR compatible)
+const storage = createStorage({
+  storage: cookieStorage,
+  key: "claimable-wagmi",
 });
 
-// Config with testnet enabled (hidden feature)
-export const testnetConfig = createConfig({
-  connectors,
-  chains: [arbitrum, arbitrumSepolia],
+// SSR-safe config (used only for cookieToInitialState on server)
+// This config doesn't include connectors as they're client-only
+export const mainnetConfig = createConfig({
+  chains: [arbitrum],
   transports: {
-    [arbitrum.id]: http(),
-    [arbitrumSepolia.id]: http(),
+    [arbitrum.id]: http(arbitrumRpc),
   },
   ssr: true,
+  storage,
+});
+
+// SSR-safe testnet config
+export const testnetConfig = createConfig({
+  chains: [arbitrum, arbitrumSepolia],
+  transports: {
+    [arbitrum.id]: http(arbitrumRpc),
+    [arbitrumSepolia.id]: http(arbitrumSepoliaRpc),
+  },
+  ssr: true,
+  storage,
 });
 
 // Helper to get the appropriate config

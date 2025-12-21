@@ -6,6 +6,58 @@ import { Transaction } from "ethers";
 
 dotenv.config();
 
+// Common Ledger derivation paths to search
+const DERIVATION_PATHS = [
+  "44'/60'/0'/0/0",   // Ledger Live / Standard (account 0, index 0)
+  "44'/60'/0'/0/1",   // Ledger Live (account 0, index 1)
+  "44'/60'/0'/0/2",   // Ledger Live (account 0, index 2)
+  "44'/60'/1'/0/0",   // Ledger Live (account 1, index 0)
+  "44'/60'/2'/0/0",   // Ledger Live (account 2, index 0)
+  "44'/60'/0'",       // Legacy MEW path
+  "44'/60'/0'/0",     // Legacy Jaxx/Metamask path
+];
+
+// Find the derivation path for a given address
+async function findDerivationPath(eth: Eth, targetAddress: string): Promise<string | null> {
+  const normalizedTarget = targetAddress.toLowerCase();
+  console.log(`🔍 Searching for address ${targetAddress} on Ledger...`);
+  
+  for (const path of DERIVATION_PATHS) {
+    try {
+      const result = await eth.getAddress(path);
+      const foundAddress = result.address.toLowerCase();
+      console.log(`   Path ${path}: ${result.address}`);
+      if (foundAddress === normalizedTarget) {
+        console.log(`✅ Found matching path: ${path}`);
+        return path;
+      }
+    } catch (e) {
+      // Some paths may not be valid, skip them
+    }
+  }
+  
+  // Also try a wider range of account indices
+  for (let account = 0; account < 10; account++) {
+    for (let index = 0; index < 5; index++) {
+      const path = `44'/60'/${account}'/0/${index}`;
+      if (DERIVATION_PATHS.includes(path)) continue; // Already checked
+      
+      try {
+        const result = await eth.getAddress(path);
+        const foundAddress = result.address.toLowerCase();
+        if (foundAddress === normalizedTarget) {
+          console.log(`✅ Found matching path: ${path} -> ${result.address}`);
+          return path;
+        }
+      } catch (e) {
+        // Skip invalid paths
+      }
+    }
+  }
+  
+  return null;
+}
+
 // Create a Ledger signer that works with ethers v6
 class LedgerSigner {
   private eth: Eth | null = null;
@@ -14,7 +66,7 @@ class LedgerSigner {
   private provider: any;
   private derivationPath: string;
 
-  constructor(address: string, provider: any, derivationPath = "44'/60'/0'/0/0") {
+  constructor(address: string, provider: any, derivationPath: string) {
     this._address = address;
     this.provider = provider;
     this.derivationPath = derivationPath;
@@ -127,7 +179,19 @@ async function main() {
       throw new Error("No signer available. Set PRIVATE_KEY or LEDGER_ACCOUNT in .env");
     }
     console.log("🔐 Using Ledger hardware wallet...");
-    ledgerSigner = new LedgerSigner(ledgerAddress, ethers.provider);
+    
+    // First, find the correct derivation path for the configured address
+    const transport = await TransportNodeHid.open("");
+    const eth = new Eth(transport);
+    
+    const derivationPath = await findDerivationPath(eth, ledgerAddress);
+    await transport.close();
+    
+    if (!derivationPath) {
+      throw new Error(`Could not find derivation path for address ${ledgerAddress}. Make sure this address exists on your Ledger.`);
+    }
+    
+    ledgerSigner = new LedgerSigner(ledgerAddress, ethers.provider, derivationPath);
     await ledgerSigner.connect();
     deployer = ledgerSigner;
   }

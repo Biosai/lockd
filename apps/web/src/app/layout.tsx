@@ -5,6 +5,9 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { headers } from "next/headers";
+import { cookieToInitialState } from "wagmi";
+import { mainnetConfig } from "@/lib/wagmi";
 
 export const metadata: Metadata = {
   title: "Lockd | Lock crypto for anyone",
@@ -44,12 +47,15 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const headersList = await headers();
+  const cookie = headersList.get("cookie");
+  const initialState = cookieToInitialState(mainnetConfig, cookie);
 
   return (
     <html lang={locale} className="dark">
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans`}>
         <NextIntlClientProvider messages={messages}>
-          <Providers>{children}</Providers>
+          <Providers initialState={initialState}>{children}</Providers>
         </NextIntlClientProvider>
       </body>
     </html>

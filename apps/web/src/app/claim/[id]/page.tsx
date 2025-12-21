@@ -282,11 +282,29 @@ export default function ClaimPage() {
                             <AlertCircle className="h-5 w-5 flex-shrink-0" />
                             <p className="text-sm">
                               {/* Sanitize error messages - don't expose raw blockchain errors */}
-                              {error.message?.includes("user rejected")
-                                ? "Transaction was rejected by user"
-                                : error.message?.includes("insufficient")
-                                ? "Insufficient balance for this transaction"
-                                : "Transaction failed. Please try again."}
+                              {(() => {
+                                const msg = error.message?.toLowerCase() || "";
+                                if (msg.includes("user rejected") || msg.includes("user denied")) {
+                                  return "Transaction was rejected by user";
+                                }
+                                if (msg.includes("insufficient")) {
+                                  return "Insufficient balance for this transaction";
+                                }
+                                // Ledger-specific errors
+                                if (msg.includes("0x6b0c") || msg.includes("0x6700") || msg.includes("no app") || msg.includes("device is locked") || msg.includes("locked device")) {
+                                  return "Ledger: Please unlock your device and open the Ethereum app";
+                                }
+                                if (msg.includes("disconnected") || msg.includes("transport") || msg.includes("hid") || msg.includes("cannot open")) {
+                                  return "Ledger: Device disconnected. Please reconnect your Ledger and open the Ethereum app";
+                                }
+                                if (msg.includes("0x6985") || msg.includes("condition not satisfied")) {
+                                  return "Ledger: Transaction rejected on device";
+                                }
+                                if (msg.includes("blind signing") || msg.includes("enable contract data") || msg.includes("contract data")) {
+                                  return "Ledger: Please enable 'Blind signing' in the Ethereum app settings";
+                                }
+                                return "Transaction failed. Please try again.";
+                              })()}
                             </p>
                           </div>
                         )}

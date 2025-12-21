@@ -3,8 +3,8 @@
     "arbitrum": {
       "chainId": 42161,
       "name": "Arbitrum One",
-      "contract": null,
-      "deployedAt": null,
+      "contract": "0x4bC1352BBb0F5EA6C5988Fe33639A6995C2067D4",
+      "deployedAt": "2025-12-21",
       "blockExplorer": "https://arbiscan.io"
     },
     "arbitrumSepolia": {

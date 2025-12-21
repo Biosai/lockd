@@ -481,11 +481,29 @@ export function CreateDepositForm() {
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <p className="text-sm">
                   {/* Sanitize error message - don't expose raw blockchain errors */}
-                  {(error?.message || approvalError?.message)?.includes("user rejected") 
-                    ? "Transaction was rejected by user"
-                    : (error?.message || approvalError?.message)?.includes("insufficient")
-                    ? "Insufficient balance for this transaction"
-                    : "Transaction failed. Please try again."}
+                  {(() => {
+                    const msg = (error?.message || approvalError?.message)?.toLowerCase() || "";
+                    if (msg.includes("user rejected") || msg.includes("user denied")) {
+                      return "Transaction was rejected by user";
+                    }
+                    if (msg.includes("insufficient")) {
+                      return "Insufficient balance for this transaction";
+                    }
+                    // Ledger-specific errors
+                    if (msg.includes("0x6b0c") || msg.includes("0x6700") || msg.includes("no app") || msg.includes("device is locked") || msg.includes("locked device")) {
+                      return "Ledger: Please unlock your device and open the Ethereum app";
+                    }
+                    if (msg.includes("disconnected") || msg.includes("transport") || msg.includes("hid") || msg.includes("cannot open")) {
+                      return "Ledger: Device disconnected. Please reconnect your Ledger and open the Ethereum app";
+                    }
+                    if (msg.includes("0x6985") || msg.includes("condition not satisfied")) {
+                      return "Ledger: Transaction rejected on device";
+                    }
+                    if (msg.includes("blind signing") || msg.includes("enable contract data") || msg.includes("contract data")) {
+                      return "Ledger: Please enable 'Blind signing' in the Ethereum app settings";
+                    }
+                    return "Transaction failed. Please try again.";
+                  })()}
                 </p>
                 {/* #region agent log */}
                 {(() => { const bigIntReplacer = (_k: string, v: unknown) => typeof v === 'bigint' ? v.toString() : v; fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:ErrorDisplay',message:'Error displayed to user',data:{errorMessage:error?.message,approvalErrorMessage:approvalError?.message,errorName:error?.name,approvalErrorName:approvalError?.name},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'},bigIntReplacer)}).catch(()=>{}); return null; })()}

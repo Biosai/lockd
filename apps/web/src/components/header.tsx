@@ -30,6 +30,8 @@ export function Header() {
   const router = useRouter();
   const t = useTranslations("header");
 
+  const isAppPage = pathname.startsWith("/app");
+
   const navigateToSection = (id: string) => {
     setMobileMenuOpen(false);
     
@@ -156,9 +158,11 @@ export function Header() {
               );
             }}
           </ConnectButton.Custom>
-          <Link href="/app">
-            <Button size="sm">{t("launchApp")}</Button>
-          </Link>
+          {!isAppPage && (
+            <Link href="/app">
+              <Button size="sm">{t("launchApp")}</Button>
+            </Link>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -207,9 +211,11 @@ export function Header() {
               </Link>
               <hr className="border-border/40" />
               <LanguageSwitcher />
-              <Link href="/app" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full">{t("launchApp")}</Button>
-              </Link>
+              {!isAppPage && (
+                <Link href="/app" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full">{t("launchApp")}</Button>
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
