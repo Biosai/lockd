@@ -7,7 +7,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
 export const metadata: Metadata = {
-  title: "Lokd | Lock crypto for anyone",
+  title: "Lockd | Lock crypto for anyone",
   description:
     "The trustless way to send crypto. Lock funds for a recipient with automatic refund protection. No middleman, purely on-chain.",
   keywords: [
@@ -20,18 +20,18 @@ export const metadata: Metadata = {
     "trustless",
     "lock",
   ],
-  authors: [{ name: "Lokd" }],
+  authors: [{ name: "Lockd" }],
   openGraph: {
-    title: "Lokd | Lock crypto for anyone",
+    title: "Lockd | Lock crypto for anyone",
     description:
       "Lock crypto for anyone. Get it back if unclaimed. Trustless, on-chain.",
     type: "website",
     locale: "en_US",
-    siteName: "Lokd",
+    siteName: "Lockd",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lokd | Lock crypto for anyone",
+    title: "Lockd | Lock crypto for anyone",
     description:
       "Lock crypto for anyone. Get it back if unclaimed. Trustless, on-chain.",
   },

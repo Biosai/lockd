@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "title": "Lokd | Verrouillez des cryptos pour n'importe qui",
+    "title": "Lockd | Verrouillez des cryptos pour n'importe qui",
     "description": "La façon sécurisée d'envoyer des cryptos. Verrouillez des fonds pour un destinataire avec remboursement automatique. Sans intermédiaire, 100% on-chain.",
     "ogDescription": "Verrouillez des cryptos pour n'importe qui. Récupérez-les si non réclamées. Sans confiance, on-chain."
   },
@@ -137,6 +137,13 @@
     "titleCharCount": "{count}/64 caractères",
     "amountLabel": "Montant",
     "tokenLabel": "Token",
+    "customToken": "Token Personnalisé",
+    "customTokenAddressLabel": "Adresse du Contrat Token",
+    "customTokenAddressPlaceholder": "0x...",
+    "invalidTokenAddress": "Veuillez entrer une adresse de contrat valide",
+    "loadingTokenInfo": "Chargement des infos du token...",
+    "invalidERC20Token": "Contrat ERC20 invalide",
+    "tokenDetected": "Détecté : {symbol} ({decimals} décimales)",
     "deadlineLabel": "Date Limite de Réclamation",
     "deadline1h": "1 heure",
     "deadline24h": "24 heures",

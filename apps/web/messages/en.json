@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "title": "Lokd | Lock crypto for anyone",
+    "title": "Lockd | Lock crypto for anyone",
     "description": "The trustless way to send crypto. Lock funds for a recipient with automatic refund protection. No middleman, purely on-chain.",
     "ogDescription": "Lock crypto for anyone. Get it back if unclaimed. Trustless, on-chain."
   },
@@ -137,6 +137,13 @@
     "titleCharCount": "{count}/64 characters",
     "amountLabel": "Amount",
     "tokenLabel": "Token",
+    "customToken": "Custom Token",
+    "customTokenAddressLabel": "Token Contract Address",
+    "customTokenAddressPlaceholder": "0x...",
+    "invalidTokenAddress": "Please enter a valid contract address",
+    "loadingTokenInfo": "Loading token info...",
+    "invalidERC20Token": "Invalid ERC20 token contract",
+    "tokenDetected": "Detected: {symbol} ({decimals} decimals)",
     "deadlineLabel": "Claim Deadline",
     "deadline1h": "1 hour",
     "deadline24h": "24 hours",

@@ -88,10 +88,10 @@ export default function ClaimPage() {
     BigInt(Math.floor(Date.now() / 1000)) > depositData.deadline;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="pt-32 pb-20">
+      <main className="pt-32 pb-20 flex-1">
         <div className="mx-auto max-w-lg px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

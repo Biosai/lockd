@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseEther, parseUnits, isAddress } from "viem";
+import { useState, useMemo } from "react";
+import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContracts } from "wagmi";
+import { parseEther, parseUnits, isAddress, type Address } from "viem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS } from "@/lib/contracts";
+import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS, ERC20_ABI } from "@/lib/contracts";
 import { AlertCircle, CheckCircle2, Loader2, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
@@ -37,6 +37,7 @@ export function CreateDepositForm() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [selectedToken, setSelectedToken] = useState("ETH");
+  const [customTokenAddress, setCustomTokenAddress] = useState("");
   const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>("24h");
   const [customDeadline, setCustomDeadline] = useState("");
   const [title, setTitle] = useState("");
@@ -46,10 +47,43 @@ export function CreateDepositForm() {
 
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
   const tokens = TOKENS[chainId] || TOKENS[42161]; // Default to Arbitrum tokens
-  const selectedTokenInfo = tokens[selectedToken];
+
+  // Fetch custom token metadata
+  const isValidCustomAddress = customTokenAddress.length > 0 && isAddress(customTokenAddress);
+  const { data: customTokenData, isLoading: isLoadingCustomToken, isError: isCustomTokenError } = useReadContracts({
+    contracts: [
+      {
+        address: customTokenAddress as Address,
+        abi: ERC20_ABI,
+        functionName: "symbol",
+      },
+      {
+        address: customTokenAddress as Address,
+        abi: ERC20_ABI,
+        functionName: "decimals",
+      },
+    ],
+    query: {
+      enabled: selectedToken === "CUSTOM" && isValidCustomAddress,
+    },
+  });
+
+  const customTokenInfo = useMemo(() => {
+    if (!customTokenData || customTokenData[0].status !== "success" || customTokenData[1].status !== "success") {
+      return null;
+    }
+    return {
+      address: customTokenAddress as Address,
+      symbol: customTokenData[0].result as string,
+      decimals: customTokenData[1].result as number,
+    };
+  }, [customTokenData, customTokenAddress]);
+
+  const selectedTokenInfo = selectedToken === "CUSTOM" ? customTokenInfo : tokens[selectedToken];
 
   const isValidRecipient = recipient && isAddress(recipient);
   const isValidAmount = amount && parseFloat(amount) > 0;
+  const isValidToken = selectedToken !== "CUSTOM" || (isValidCustomAddress && customTokenInfo !== null);
   
   const getDeadlineTimestamp = (): bigint => {
     if (deadlinePreset === "custom" && customDeadline) {
@@ -61,7 +95,7 @@ export function CreateDepositForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isValidRecipient || !isValidAmount || !contractAddress) return;
+    if (!isValidRecipient || !isValidAmount || !isValidToken || !contractAddress) return;
 
     const deadline = getDeadlineTimestamp();
 
@@ -74,6 +108,8 @@ export function CreateDepositForm() {
         value: parseEther(amount),
       });
     } else {
+      if (!selectedTokenInfo) return;
+      
       const tokenAddress = selectedTokenInfo.address;
       const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
       
@@ -98,6 +134,7 @@ export function CreateDepositForm() {
     setRecipient("");
     setAmount("");
     setSelectedToken("ETH");
+    setCustomTokenAddress("");
     setDeadlinePreset("24h");
     setCustomDeadline("");
     setTitle("");
@@ -159,7 +196,12 @@ export function CreateDepositForm() {
             </div>
             <div className="space-y-2">
               <Label>{t("tokenLabel")}</Label>
-              <Select value={selectedToken} onValueChange={setSelectedToken}>
+              <Select value={selectedToken} onValueChange={(value) => {
+                setSelectedToken(value);
+                if (value !== "CUSTOM") {
+                  setCustomTokenAddress("");
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -169,10 +211,51 @@ export function CreateDepositForm() {
                       {info.symbol}
                     </SelectItem>
                   ))}
+                  <SelectItem value="CUSTOM">{t("customToken")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+          {/* Custom Token Address */}
+          <AnimatePresence>
+            {selectedToken === "CUSTOM" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="customToken">{t("customTokenAddressLabel")}</Label>
+                  <Input
+                    id="customToken"
+                    placeholder={t("customTokenAddressPlaceholder")}
+                    value={customTokenAddress}
+                    onChange={(e) => setCustomTokenAddress(e.target.value)}
+                    className={customTokenAddress && !isValidCustomAddress ? "border-destructive" : ""}
+                  />
+                  {customTokenAddress && !isValidCustomAddress && (
+                    <p className="text-xs text-destructive">{t("invalidTokenAddress")}</p>
+                  )}
+                  {isValidCustomAddress && isLoadingCustomToken && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {t("loadingTokenInfo")}
+                    </p>
+                  )}
+                  {isValidCustomAddress && isCustomTokenError && (
+                    <p className="text-xs text-destructive">{t("invalidERC20Token")}</p>
+                  )}
+                  {customTokenInfo && (
+                    <p className="text-xs text-primary">
+                      {t("tokenDetected", { symbol: customTokenInfo.symbol, decimals: customTokenInfo.decimals })}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Deadline */}
           <div className="space-y-2">
@@ -261,7 +344,7 @@ export function CreateDepositForm() {
             type="submit"
             className="w-full"
             size="lg"
-            disabled={!isValidRecipient || !isValidAmount || isPending || isConfirming}
+            disabled={!isValidRecipient || !isValidAmount || !isValidToken || isPending || isConfirming}
           >
             {isPending || isConfirming ? (
               <>

@@ -17,10 +17,10 @@ export default function AppPage() {
   const t = useTranslations("app");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="pt-24 pb-20">
+      <main className="pt-24 pb-20 flex-1">
         <div className="mx-auto max-w-3xl px-6">
           {!isConnected ? (
             <motion.div
