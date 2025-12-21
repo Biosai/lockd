@@ -26,11 +26,9 @@ jobs:
 
       - name: Compile contracts
         run: npm run compile
-        working-directory: packages/contracts
 
       - name: Run tests
         run: npm test
-        working-directory: packages/contracts
 
   lint-web:
     name: Web App Lint

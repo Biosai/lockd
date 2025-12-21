@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContracts, useReadContract } from "wagmi";
-import { parseEther, parseUnits, isAddress, type Address, maxUint256 } from "viem";
+import { parseEther, parseUnits, isAddress, type Address } from "viem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,14 @@ import { useTranslations } from "next-intl";
 type ApprovalStep = "idle" | "approving" | "approved";
 
 type DeadlinePreset = "1h" | "24h" | "7d" | "30d" | "custom";
+
+// Must match contract's MAX_TITLE_LENGTH
+const MAX_TITLE_BYTES = 128;
+
+// Calculate byte length of a string (for UTF-8 validation)
+function getByteLength(str: string): number {
+  return new TextEncoder().encode(str).length;
+}
 
 export function CreateDepositForm() {
   const { address } = useAccount();
@@ -144,6 +152,10 @@ export function CreateDepositForm() {
   const isValidAmount = amount && parseFloat(amount) > 0;
   const isValidToken = selectedToken !== "CUSTOM" || (isValidCustomAddress && customTokenInfo !== null);
   
+  // Calculate title byte length for validation
+  const titleByteLength = useMemo(() => getByteLength(title), [title]);
+  const isTitleValid = titleByteLength <= MAX_TITLE_BYTES;
+  
   const getDeadlineTimestamp = (): bigint => {
     if (deadlinePreset === "custom" && customDeadline) {
       return BigInt(Math.floor(new Date(customDeadline).getTime() / 1000));
@@ -151,23 +163,23 @@ export function CreateDepositForm() {
     return BigInt(Math.floor(Date.now() / 1000) + DEADLINE_PRESETS[deadlinePreset].seconds);
   };
 
-  // Handle ERC20 approval
+  // Handle ERC20 approval - approve exact amount for security
   const handleApprove = async () => {
-    if (!tokenAddress || !contractAddress || !isContractConfigured) return;
+    if (!tokenAddress || !contractAddress || !isContractConfigured || !parsedAmount) return;
     
     setApprovalStep("approving");
     writeApproval({
       address: tokenAddress,
       abi: ERC20_ABI,
       functionName: "approve",
-      args: [contractAddress, maxUint256], // Approve max for convenience
+      args: [contractAddress, parsedAmount],
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isValidRecipient || !isValidAmount || !isValidToken || !contractAddress || !isContractConfigured) return;
+    if (!isValidRecipient || !isValidAmount || !isValidToken || !isTitleValid || !contractAddress || !isContractConfigured) return;
 
     // For ERC20 tokens, ensure approval is done first
     if (isERC20 && needsApproval) {
@@ -247,11 +259,18 @@ export function CreateDepositForm() {
               id="title"
               placeholder={t("titlePlaceholder")}
               value={title}
-              onChange={(e) => setTitle(e.target.value.slice(0, 64))}
-              maxLength={64}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                // Only update if within byte limit, or if deleting characters
+                if (getByteLength(newValue) <= MAX_TITLE_BYTES || newValue.length < title.length) {
+                  setTitle(newValue);
+                }
+              }}
+              className={!isTitleValid ? "border-destructive" : ""}
             />
-            <p className="text-xs text-muted-foreground">
-              {t("titleCharCount", { count: title.length })}
+            <p className={`text-xs ${!isTitleValid ? "text-destructive" : "text-muted-foreground"}`}>
+              {titleByteLength}/{MAX_TITLE_BYTES} bytes
+              {titleByteLength !== title.length && ` (${title.length} chars)`}
             </p>
           </div>
 
@@ -409,7 +428,7 @@ export function CreateDepositForm() {
                 <div className="text-sm">
                   <p className="font-medium">Token approval required</p>
                   <p className="text-muted-foreground">
-                    You need to approve the contract to spend your {selectedTokenInfo?.symbol || "tokens"} before depositing.
+                    You need to approve exactly {amount} {selectedTokenInfo?.symbol || "tokens"} for this deposit. This is more secure than unlimited approvals.
                   </p>
                 </div>
               </motion.div>
@@ -487,6 +506,7 @@ export function CreateDepositForm() {
               !isValidRecipient || 
               !isValidAmount || 
               !isValidToken || 
+              !isTitleValid ||
               !isContractConfigured ||
               isPending || 
               isConfirming || 
@@ -509,7 +529,7 @@ export function CreateDepositForm() {
             ) : isERC20 && needsApproval ? (
               <>
                 <ShieldCheck className="mr-2 h-4 w-4" />
-                Approve {selectedTokenInfo?.symbol || "Token"}
+                Approve {amount} {selectedTokenInfo?.symbol || "Token"}
               </>
             ) : (
               t("createDeposit")
