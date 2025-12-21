@@ -74,6 +74,12 @@ contract ExclusiveClaim is ReentrancyGuard {
     /// @notice Error thrown when deposit doesn't exist
     error DepositNotFound();
 
+    /// @notice Error thrown when title exceeds maximum length
+    error TitleTooLong();
+
+    /// @notice Maximum allowed length for deposit title (in bytes)
+    uint256 public constant MAX_TITLE_LENGTH = 128;
+
     /**
      * @notice Create a new deposit for ETH
      * @param claimant The address that can claim this deposit
@@ -89,6 +95,7 @@ contract ExclusiveClaim is ReentrancyGuard {
         if (msg.value == 0) revert ZeroAmount();
         if (claimant == address(0)) revert ZeroClaimant();
         if (deadline <= block.timestamp) revert DeadlineNotInFuture();
+        if (bytes(title).length > MAX_TITLE_LENGTH) revert TitleTooLong();
 
         depositId = depositCount++;
         
@@ -107,9 +114,10 @@ contract ExclusiveClaim is ReentrancyGuard {
 
     /**
      * @notice Create a new deposit for an ERC20 token
+     * @dev Supports fee-on-transfer tokens by recording actual balance change
      * @param claimant The address that can claim this deposit
      * @param token The ERC20 token address
-     * @param amount The amount of tokens to deposit
+     * @param amount The amount of tokens to deposit (may differ from actual if fee-on-transfer)
      * @param deadline The timestamp after which the depositor can also withdraw
      * @param title Optional title/label for the deposit
      * @return depositId The ID of the newly created deposit
@@ -125,9 +133,19 @@ contract ExclusiveClaim is ReentrancyGuard {
         if (claimant == address(0)) revert ZeroClaimant();
         if (token == address(0)) revert InvalidETHAmount();
         if (deadline <= block.timestamp) revert DeadlineNotInFuture();
+        if (bytes(title).length > MAX_TITLE_LENGTH) revert TitleTooLong();
 
+        // Record balance before transfer to handle fee-on-transfer tokens
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+        
         // Transfer tokens from sender to this contract
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        
+        // Calculate actual amount received (handles fee-on-transfer tokens)
+        uint256 actualAmount = IERC20(token).balanceOf(address(this)) - balanceBefore;
+        
+        // Ensure we actually received tokens
+        if (actualAmount == 0) revert ZeroAmount();
 
         depositId = depositCount++;
 
@@ -135,13 +153,13 @@ contract ExclusiveClaim is ReentrancyGuard {
             depositor: msg.sender,
             claimant: claimant,
             token: token,
-            amount: amount,
+            amount: actualAmount, // Store actual amount received, not requested amount
             deadline: deadline,
             claimed: false,
             title: title
         });
 
-        emit DepositCreated(depositId, msg.sender, claimant, token, amount, deadline, title);
+        emit DepositCreated(depositId, msg.sender, claimant, token, actualAmount, deadline, title);
     }
 
     /**

@@ -1,10 +1,31 @@
-import { Address } from "viem";
+import { Address, zeroAddress } from "viem";
 
 // Contract addresses per chain (Arbitrum only)
+// SECURITY: These must be updated with actual deployed contract addresses before production use
+// Set via environment variables: NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM and NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM_SEPOLIA
 export const CLAIMABLE_ADDRESSES: Record<number, Address> = {
-  42161: "0x0000000000000000000000000000000000000000", // Arbitrum - to be deployed
-  421614: "0x0000000000000000000000000000000000000000", // Arbitrum Sepolia - to be deployed
+  42161: (process.env.NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM as Address) || zeroAddress, // Arbitrum
+  421614: (process.env.NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM_SEPOLIA as Address) || zeroAddress, // Arbitrum Sepolia
 };
+
+/**
+ * Validates that a contract address is properly configured (not zero address)
+ * @param address The contract address to validate
+ * @returns true if the address is valid and not the zero address
+ */
+export function isValidContractAddress(address: Address | undefined): address is Address {
+  return !!address && address !== zeroAddress;
+}
+
+/**
+ * Error thrown when attempting to interact with an unconfigured contract
+ */
+export class ContractNotConfiguredError extends Error {
+  constructor(chainId: number) {
+    super(`Contract address not configured for chain ${chainId}. Please set the appropriate environment variable.`);
+    this.name = "ContractNotConfiguredError";
+  }
+}
 
 // Common token addresses per chain (Arbitrum only)
 export const TOKENS: Record<

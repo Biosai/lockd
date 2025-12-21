@@ -1,10 +1,10 @@
 "use client";
 
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { formatEther, formatUnits } from "viem";
+import { formatEther, formatUnits, type Address } from "viem";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI } from "@/lib/contracts";
+import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, ERC20_ABI, isValidContractAddress } from "@/lib/contracts";
 import { shortenAddress, formatDeadline, formatDate } from "@/lib/utils";
 import { Clock, Loader2, RefreshCw, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -89,6 +89,7 @@ interface DepositCardProps {
 export function DepositCard({ deposit, type }: DepositCardProps) {
   const chainId = useChainId();
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
+  const isContractConfigured = isValidContractAddress(contractAddress);
   const tSent = useTranslations("sentDeposits");
   const tReceived = useTranslations("receivedDeposits");
   
@@ -96,26 +97,52 @@ export function DepositCard({ deposit, type }: DepositCardProps) {
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const isETH = deposit.token === "0x0000000000000000000000000000000000000000";
+  const tokenAddress = !isETH ? deposit.token as Address : undefined;
+
+  // Fetch token decimals dynamically for ERC20 tokens
+  const { data: tokenDecimals } = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI,
+    functionName: "decimals",
+    query: {
+      enabled: !!tokenAddress,
+    },
+  });
+
+  // Fetch token symbol dynamically for ERC20 tokens
+  const { data: tokenSymbol } = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI,
+    functionName: "symbol",
+    query: {
+      enabled: !!tokenAddress,
+    },
+  });
+
+  // Use fetched decimals or fallback to 18 (most common)
+  const decimals = isETH ? 18 : (tokenDecimals ?? 18);
   const amount = isETH
     ? formatEther(deposit.amount)
-    : formatUnits(deposit.amount, 6); // Assume 6 decimals for tokens
-  const symbol = isETH ? "ETH" : "Token";
+    : formatUnits(deposit.amount, decimals);
+  const symbol = isETH ? "ETH" : (tokenSymbol ?? "Token");
   
   const deadlineReached = BigInt(Math.floor(Date.now() / 1000)) > deposit.deadline;
   const canRefund = type === "sent" && deadlineReached && !deposit.claimed;
   const canClaim = type === "received" && !deposit.claimed;
 
   const handleAction = () => {
+    if (!isContractConfigured) return;
+    
     if (canRefund) {
       writeContract({
-        address: contractAddress!,
+        address: contractAddress,
         abi: CLAIMABLE_ABI,
         functionName: "refund",
         args: [BigInt(deposit.id)],
       });
     } else if (canClaim) {
       writeContract({
-        address: contractAddress!,
+        address: contractAddress,
         abi: CLAIMABLE_ABI,
         functionName: "claim",
         args: [BigInt(deposit.id)],

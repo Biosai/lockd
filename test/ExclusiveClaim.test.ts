@@ -15,6 +15,7 @@ describe("ExclusiveClaim", function () {
   const ONE_DAY = 24 * ONE_HOUR;
   const ETH_AMOUNT = ethers.parseEther("1");
   const TOKEN_AMOUNT = ethers.parseUnits("1000", 6); // USDC-like (6 decimals)
+  const DEFAULT_TITLE = "Test Deposit";
 
   beforeEach(async function () {
     [depositor, claimant, other] = await ethers.getSigners();
@@ -37,12 +38,12 @@ describe("ExclusiveClaim", function () {
         const deadline = (await time.latest()) + ONE_DAY;
 
         await expect(
-          exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+          exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
             value: ETH_AMOUNT,
           })
         )
           .to.emit(exclusiveClaim, "DepositCreated")
-          .withArgs(0, depositor.address, claimant.address, ethers.ZeroAddress, ETH_AMOUNT, deadline);
+          .withArgs(0, depositor.address, claimant.address, ethers.ZeroAddress, ETH_AMOUNT, deadline, DEFAULT_TITLE);
 
         const deposit = await exclusiveClaim.getDeposit(0);
         expect(deposit.depositor).to.equal(depositor.address);
@@ -51,6 +52,7 @@ describe("ExclusiveClaim", function () {
         expect(deposit.amount).to.equal(ETH_AMOUNT);
         expect(deposit.deadline).to.equal(deadline);
         expect(deposit.claimed).to.equal(false);
+        expect(deposit.title).to.equal(DEFAULT_TITLE);
       });
 
       it("should increment deposit count", async function () {
@@ -58,12 +60,12 @@ describe("ExclusiveClaim", function () {
 
         expect(await exclusiveClaim.depositCount()).to.equal(0);
         
-        await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+        await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
           value: ETH_AMOUNT,
         });
         expect(await exclusiveClaim.depositCount()).to.equal(1);
 
-        await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+        await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
           value: ETH_AMOUNT,
         });
         expect(await exclusiveClaim.depositCount()).to.equal(2);
@@ -73,7 +75,7 @@ describe("ExclusiveClaim", function () {
         const deadline = (await time.latest()) + ONE_DAY;
 
         await expect(
-          exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+          exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
             value: 0,
           })
         ).to.be.revertedWithCustomError(exclusiveClaim, "ZeroAmount");
@@ -83,7 +85,7 @@ describe("ExclusiveClaim", function () {
         const deadline = (await time.latest()) + ONE_DAY;
 
         await expect(
-          exclusiveClaim.connect(depositor).depositETH(ethers.ZeroAddress, deadline, {
+          exclusiveClaim.connect(depositor).depositETH(ethers.ZeroAddress, deadline, DEFAULT_TITLE, {
             value: ETH_AMOUNT,
           })
         ).to.be.revertedWithCustomError(exclusiveClaim, "ZeroClaimant");
@@ -93,7 +95,7 @@ describe("ExclusiveClaim", function () {
         const pastDeadline = (await time.latest()) - 1;
 
         await expect(
-          exclusiveClaim.connect(depositor).depositETH(claimant.address, pastDeadline, {
+          exclusiveClaim.connect(depositor).depositETH(claimant.address, pastDeadline, DEFAULT_TITLE, {
             value: ETH_AMOUNT,
           })
         ).to.be.revertedWithCustomError(exclusiveClaim, "DeadlineNotInFuture");
@@ -103,10 +105,21 @@ describe("ExclusiveClaim", function () {
         const currentTime = await time.latest();
 
         await expect(
-          exclusiveClaim.connect(depositor).depositETH(claimant.address, currentTime, {
+          exclusiveClaim.connect(depositor).depositETH(claimant.address, currentTime, DEFAULT_TITLE, {
             value: ETH_AMOUNT,
           })
         ).to.be.revertedWithCustomError(exclusiveClaim, "DeadlineNotInFuture");
+      });
+
+      it("should revert if title is too long", async function () {
+        const deadline = (await time.latest()) + ONE_DAY;
+        const longTitle = "a".repeat(129); // 129 chars, exceeds MAX_TITLE_LENGTH of 128
+
+        await expect(
+          exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, longTitle, {
+            value: ETH_AMOUNT,
+          })
+        ).to.be.revertedWithCustomError(exclusiveClaim, "TitleTooLong");
       });
     });
 
@@ -116,7 +129,7 @@ describe("ExclusiveClaim", function () {
 
       beforeEach(async function () {
         deadline = (await time.latest()) + ONE_DAY;
-        const tx = await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+        const tx = await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
           value: ETH_AMOUNT,
         });
         const receipt = await tx.wait();
@@ -173,7 +186,7 @@ describe("ExclusiveClaim", function () {
 
       beforeEach(async function () {
         deadline = (await time.latest()) + ONE_DAY;
-        await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+        await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
           value: ETH_AMOUNT,
         });
         depositId = 0n;
@@ -242,7 +255,8 @@ describe("ExclusiveClaim", function () {
             claimant.address,
             await mockToken.getAddress(),
             TOKEN_AMOUNT,
-            deadline
+            deadline,
+            DEFAULT_TITLE
           )
         )
           .to.emit(exclusiveClaim, "DepositCreated")
@@ -252,7 +266,8 @@ describe("ExclusiveClaim", function () {
             claimant.address,
             await mockToken.getAddress(),
             TOKEN_AMOUNT,
-            deadline
+            deadline,
+            DEFAULT_TITLE
           );
 
         const deposit = await exclusiveClaim.getDeposit(0);
@@ -260,6 +275,7 @@ describe("ExclusiveClaim", function () {
         expect(deposit.claimant).to.equal(claimant.address);
         expect(deposit.token).to.equal(await mockToken.getAddress());
         expect(deposit.amount).to.equal(TOKEN_AMOUNT);
+        expect(deposit.title).to.equal(DEFAULT_TITLE);
 
         // Contract should hold the tokens
         expect(await mockToken.balanceOf(await exclusiveClaim.getAddress())).to.equal(TOKEN_AMOUNT);
@@ -273,7 +289,8 @@ describe("ExclusiveClaim", function () {
             claimant.address,
             await mockToken.getAddress(),
             0,
-            deadline
+            deadline,
+            DEFAULT_TITLE
           )
         ).to.be.revertedWithCustomError(exclusiveClaim, "ZeroAmount");
       });
@@ -286,7 +303,8 @@ describe("ExclusiveClaim", function () {
             ethers.ZeroAddress,
             await mockToken.getAddress(),
             TOKEN_AMOUNT,
-            deadline
+            deadline,
+            DEFAULT_TITLE
           )
         ).to.be.revertedWithCustomError(exclusiveClaim, "ZeroClaimant");
       });
@@ -299,7 +317,8 @@ describe("ExclusiveClaim", function () {
             claimant.address,
             ethers.ZeroAddress,
             TOKEN_AMOUNT,
-            deadline
+            deadline,
+            DEFAULT_TITLE
           )
         ).to.be.revertedWithCustomError(exclusiveClaim, "InvalidETHAmount");
       });
@@ -312,7 +331,8 @@ describe("ExclusiveClaim", function () {
             claimant.address,
             await mockToken.getAddress(),
             TOKEN_AMOUNT,
-            pastDeadline
+            pastDeadline,
+            DEFAULT_TITLE
           )
         ).to.be.revertedWithCustomError(exclusiveClaim, "DeadlineNotInFuture");
       });
@@ -325,9 +345,27 @@ describe("ExclusiveClaim", function () {
             claimant.address,
             await mockToken.getAddress(),
             TOKEN_AMOUNT,
-            deadline
+            deadline,
+            DEFAULT_TITLE
           )
         ).to.be.reverted;
+      });
+
+      it("should revert if title is too long", async function () {
+        const deadline = (await time.latest()) + ONE_DAY;
+        const longTitle = "a".repeat(129); // 129 chars, exceeds MAX_TITLE_LENGTH of 128
+        
+        await mockToken.connect(depositor).approve(await exclusiveClaim.getAddress(), TOKEN_AMOUNT);
+
+        await expect(
+          exclusiveClaim.connect(depositor).depositToken(
+            claimant.address,
+            await mockToken.getAddress(),
+            TOKEN_AMOUNT,
+            deadline,
+            longTitle
+          )
+        ).to.be.revertedWithCustomError(exclusiveClaim, "TitleTooLong");
       });
     });
 
@@ -342,7 +380,8 @@ describe("ExclusiveClaim", function () {
           claimant.address,
           await mockToken.getAddress(),
           TOKEN_AMOUNT,
-          deadline
+          deadline,
+          DEFAULT_TITLE
         );
         depositId = 0n;
       });
@@ -392,7 +431,8 @@ describe("ExclusiveClaim", function () {
           claimant.address,
           await mockToken.getAddress(),
           TOKEN_AMOUNT,
-          deadline
+          deadline,
+          DEFAULT_TITLE
         );
         depositId = 0n;
       });
@@ -431,7 +471,7 @@ describe("ExclusiveClaim", function () {
       const deadline = (await time.latest()) + ONE_DAY;
 
       // First deposit: ETH from depositor to claimant
-      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, "ETH Deposit", {
         value: ETH_AMOUNT,
       });
 
@@ -441,7 +481,8 @@ describe("ExclusiveClaim", function () {
         other.address,
         await mockToken.getAddress(),
         TOKEN_AMOUNT,
-        deadline
+        deadline,
+        "Token Deposit"
       );
 
       expect(await exclusiveClaim.depositCount()).to.equal(2);
@@ -461,7 +502,7 @@ describe("ExclusiveClaim", function () {
 
     it("should handle race condition: claimant claims just before depositor refunds", async function () {
       const deadline = (await time.latest()) + ONE_DAY;
-      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
         value: ETH_AMOUNT,
       });
 
@@ -483,7 +524,7 @@ describe("ExclusiveClaim", function () {
       const deadline = (await time.latest()) + ONE_DAY;
       const smallAmount = 1n; // 1 wei
 
-      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
         value: smallAmount,
       });
 
@@ -497,7 +538,7 @@ describe("ExclusiveClaim", function () {
       const deadline = (await time.latest()) + ONE_DAY;
       const largeAmount = ethers.parseEther("1000"); // 1000 ETH (reasonable for test accounts)
 
-      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
         value: largeAmount,
       });
 
@@ -508,7 +549,7 @@ describe("ExclusiveClaim", function () {
     it("should handle minimum deadline (1 second in future)", async function () {
       const deadline = (await time.latest()) + 2; // +2 to account for block time
 
-      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, {
+      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, DEFAULT_TITLE, {
         value: ETH_AMOUNT,
       });
 
@@ -519,7 +560,7 @@ describe("ExclusiveClaim", function () {
     it("should allow depositor to be their own claimant", async function () {
       const deadline = (await time.latest()) + ONE_DAY;
 
-      await exclusiveClaim.connect(depositor).depositETH(depositor.address, deadline, {
+      await exclusiveClaim.connect(depositor).depositETH(depositor.address, deadline, DEFAULT_TITLE, {
         value: ETH_AMOUNT,
       });
 
@@ -527,6 +568,29 @@ describe("ExclusiveClaim", function () {
       
       const deposit = await exclusiveClaim.getDeposit(0);
       expect(deposit.claimed).to.equal(true);
+    });
+
+    it("should handle empty title", async function () {
+      const deadline = (await time.latest()) + ONE_DAY;
+
+      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, "", {
+        value: ETH_AMOUNT,
+      });
+
+      const deposit = await exclusiveClaim.getDeposit(0);
+      expect(deposit.title).to.equal("");
+    });
+
+    it("should handle max length title", async function () {
+      const deadline = (await time.latest()) + ONE_DAY;
+      const maxTitle = "a".repeat(128); // Exactly MAX_TITLE_LENGTH
+
+      await exclusiveClaim.connect(depositor).depositETH(claimant.address, deadline, maxTitle, {
+        value: ETH_AMOUNT,
+      });
+
+      const deposit = await exclusiveClaim.getDeposit(0);
+      expect(deposit.title).to.equal(maxTitle);
     });
   });
 });

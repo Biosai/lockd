@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContracts } from "wagmi";
-import { parseEther, parseUnits, isAddress, type Address } from "viem";
+import { useState, useMemo, useEffect } from "react";
+import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContracts, useReadContract } from "wagmi";
+import { parseEther, parseUnits, isAddress, type Address, maxUint256 } from "viem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS, ERC20_ABI } from "@/lib/contracts";
-import { AlertCircle, CheckCircle2, Loader2, Info } from "lucide-react";
+import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS, ERC20_ABI, isValidContractAddress } from "@/lib/contracts";
+import { AlertCircle, CheckCircle2, Loader2, Info, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
+
+type ApprovalStep = "idle" | "approving" | "approved";
 
 type DeadlinePreset = "1h" | "24h" | "7d" | "30d" | "custom";
 
@@ -41,11 +43,25 @@ export function CreateDepositForm() {
   const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>("24h");
   const [customDeadline, setCustomDeadline] = useState("");
   const [title, setTitle] = useState("");
+  const [approvalStep, setApprovalStep] = useState<ApprovalStep>("idle");
   
+  // Deposit transaction
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
+  // Approval transaction (separate from deposit)
+  const { 
+    writeContract: writeApproval, 
+    data: approvalHash, 
+    isPending: isApprovalPending, 
+    error: approvalError 
+  } = useWriteContract();
+  const { isLoading: isApprovalConfirming, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({ 
+    hash: approvalHash 
+  });
+
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
+  const isContractConfigured = isValidContractAddress(contractAddress);
   const tokens = TOKENS[chainId] || TOKENS[42161]; // Default to Arbitrum tokens
 
   // Fetch custom token metadata
@@ -80,6 +96,49 @@ export function CreateDepositForm() {
   }, [customTokenData, customTokenAddress]);
 
   const selectedTokenInfo = selectedToken === "CUSTOM" ? customTokenInfo : tokens[selectedToken];
+  const isERC20 = selectedToken !== "ETH";
+  const tokenAddress = isERC20 ? selectedTokenInfo?.address : undefined;
+
+  // Calculate parsed token amount for allowance comparison
+  const parsedAmount = useMemo(() => {
+    if (!amount || !selectedTokenInfo || parseFloat(amount) <= 0) return BigInt(0);
+    try {
+      return parseUnits(amount, selectedTokenInfo.decimals);
+    } catch {
+      return BigInt(0);
+    }
+  }, [amount, selectedTokenInfo]);
+
+  // Fetch current allowance for ERC20 tokens
+  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI,
+    functionName: "allowance",
+    args: address && contractAddress ? [address, contractAddress] : undefined,
+    query: {
+      enabled: isERC20 && !!tokenAddress && !!address && isContractConfigured,
+    },
+  });
+
+  // Check if approval is needed
+  const needsApproval = useMemo(() => {
+    if (!isERC20 || !parsedAmount || parsedAmount === BigInt(0)) return false;
+    if (currentAllowance === undefined) return true; // Assume needs approval if not loaded
+    return currentAllowance < parsedAmount;
+  }, [isERC20, parsedAmount, currentAllowance]);
+
+  // Update approval step when approval transaction succeeds
+  useEffect(() => {
+    if (isApprovalSuccess) {
+      setApprovalStep("approved");
+      refetchAllowance();
+    }
+  }, [isApprovalSuccess, refetchAllowance]);
+
+  // Reset approval step when token or amount changes
+  useEffect(() => {
+    setApprovalStep("idle");
+  }, [selectedToken, customTokenAddress, amount]);
 
   const isValidRecipient = recipient && isAddress(recipient);
   const isValidAmount = amount && parseFloat(amount) > 0;
@@ -92,10 +151,29 @@ export function CreateDepositForm() {
     return BigInt(Math.floor(Date.now() / 1000) + DEADLINE_PRESETS[deadlinePreset].seconds);
   };
 
+  // Handle ERC20 approval
+  const handleApprove = async () => {
+    if (!tokenAddress || !contractAddress || !isContractConfigured) return;
+    
+    setApprovalStep("approving");
+    writeApproval({
+      address: tokenAddress,
+      abi: ERC20_ABI,
+      functionName: "approve",
+      args: [contractAddress, maxUint256], // Approve max for convenience
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isValidRecipient || !isValidAmount || !isValidToken || !contractAddress) return;
+    if (!isValidRecipient || !isValidAmount || !isValidToken || !contractAddress || !isContractConfigured) return;
+
+    // For ERC20 tokens, ensure approval is done first
+    if (isERC20 && needsApproval) {
+      handleApprove();
+      return;
+    }
 
     const deadline = getDeadlineTimestamp();
 
@@ -108,13 +186,10 @@ export function CreateDepositForm() {
         value: parseEther(amount),
       });
     } else {
-      if (!selectedTokenInfo) return;
+      if (!selectedTokenInfo || !tokenAddress) return;
       
-      const tokenAddress = selectedTokenInfo.address;
       const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
       
-      // For ERC20, we need to approve first, then deposit
-      // In a real app, you'd check allowance and approve if needed
       writeContract({
         address: contractAddress,
         abi: CLAIMABLE_ABI,
@@ -304,9 +379,9 @@ export function CreateDepositForm() {
             </div>
           </div>
 
-          {/* Error Display */}
+          {/* Contract Not Configured Warning */}
           <AnimatePresence>
-            {error && (
+            {!isContractConfigured && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
@@ -314,7 +389,71 @@ export function CreateDepositForm() {
                 className="flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive"
               >
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                <p className="text-sm">{error.message}</p>
+                <p className="text-sm">
+                  Contract not configured for this network. Please contact the administrator.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Approval Status Display */}
+          <AnimatePresence>
+            {isERC20 && needsApproval && approvalStep !== "approved" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex items-center gap-2 rounded-lg bg-amber-500/10 p-4 text-amber-600 dark:text-amber-400"
+              >
+                <ShieldCheck className="h-5 w-5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">Token approval required</p>
+                  <p className="text-muted-foreground">
+                    You need to approve the contract to spend your {selectedTokenInfo?.symbol || "tokens"} before depositing.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Approval Success Display */}
+          <AnimatePresence>
+            {isApprovalSuccess && approvalStep === "approved" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex items-center gap-2 rounded-lg bg-primary/10 p-4 text-primary"
+              >
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">Token approved!</p>
+                  <p className="text-muted-foreground">
+                    You can now create the deposit.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Error Display */}
+          <AnimatePresence>
+            {(error || approvalError) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive"
+              >
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <p className="text-sm">
+                  {/* Sanitize error message - don't expose raw blockchain errors */}
+                  {(error?.message || approvalError?.message)?.includes("user rejected") 
+                    ? "Transaction was rejected by user"
+                    : (error?.message || approvalError?.message)?.includes("insufficient")
+                    ? "Insufficient balance for this transaction"
+                    : "Transaction failed. Please try again."}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -339,20 +478,39 @@ export function CreateDepositForm() {
             )}
           </AnimatePresence>
 
-          {/* Submit Button */}
+          {/* Submit / Approve Button */}
           <Button
             type="submit"
             className="w-full"
             size="lg"
-            disabled={!isValidRecipient || !isValidAmount || !isValidToken || isPending || isConfirming}
+            disabled={
+              !isValidRecipient || 
+              !isValidAmount || 
+              !isValidToken || 
+              !isContractConfigured ||
+              isPending || 
+              isConfirming || 
+              isApprovalPending || 
+              isApprovalConfirming
+            }
           >
-            {isPending || isConfirming ? (
+            {isApprovalPending || isApprovalConfirming ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isApprovalPending ? "Approve in wallet..." : "Approving..."}
+              </>
+            ) : isPending || isConfirming ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {isPending ? t("confirmInWallet") : t("processing")}
               </>
             ) : isSuccess ? (
               t("createAnother")
+            ) : isERC20 && needsApproval ? (
+              <>
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Approve {selectedTokenInfo?.symbol || "Token"}
+              </>
             ) : (
               t("createDeposit")
             )}

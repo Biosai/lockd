@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -13,8 +14,8 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { formatEther, formatUnits } from "viem";
-import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI } from "@/lib/contracts";
+import { formatEther, formatUnits, type Address } from "viem";
+import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, ERC20_ABI, isValidContractAddress } from "@/lib/contracts";
 import { shortenAddress, formatDeadline } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
@@ -27,36 +28,56 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+/**
+ * Validates and parses a deposit ID from URL parameter
+ * @param id The raw URL parameter
+ * @returns Validated bigint or null if invalid
+ */
+function parseDepositId(id: string | undefined): bigint | null {
+  if (!id) return null;
+  
+  // Check if the string is a valid non-negative integer
+  const trimmed = id.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  
+  try {
+    const parsed = BigInt(trimmed);
+    // Ensure it's non-negative (should always be true given regex above)
+    if (parsed < BigInt(0)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export default function ClaimPage() {
   const params = useParams();
-  const depositId = params.id as string;
+  const rawDepositId = params.id as string;
   const t = useTranslations("claimPage");
+
+  // Validate deposit ID before using it
+  const depositId = useMemo(() => parseDepositId(rawDepositId), [rawDepositId]);
+  const isValidDepositId = depositId !== null;
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
+  const isContractConfigured = isValidContractAddress(contractAddress);
 
   const { data: deposit, isLoading: isLoadingDeposit } = useReadContract({
     address: contractAddress,
     abi: CLAIMABLE_ABI,
     functionName: "getDeposit",
-    args: [BigInt(depositId || 0)],
+    args: depositId !== null ? [depositId] : undefined,
+    query: {
+      enabled: isValidDepositId && isContractConfigured,
+    },
   });
 
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
-
-  const handleClaim = () => {
-    if (!contractAddress) return;
-    writeContract({
-      address: contractAddress,
-      abi: CLAIMABLE_ABI,
-      functionName: "claim",
-      args: [BigInt(depositId)],
-    });
-  };
 
   // Parse deposit data
   const depositData = deposit
@@ -73,12 +94,46 @@ export default function ClaimPage() {
 
   const isETH =
     depositData?.token === "0x0000000000000000000000000000000000000000";
+  const tokenAddress = !isETH && depositData?.token ? depositData.token as Address : undefined;
+
+  // Fetch token decimals dynamically for ERC20 tokens
+  const { data: tokenDecimals } = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI,
+    functionName: "decimals",
+    query: {
+      enabled: !!tokenAddress,
+    },
+  });
+
+  // Fetch token symbol dynamically for ERC20 tokens
+  const { data: tokenSymbol } = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI,
+    functionName: "symbol",
+    query: {
+      enabled: !!tokenAddress,
+    },
+  });
+
+  // Use fetched decimals or fallback to 18 (most common)
+  const decimals = isETH ? 18 : (tokenDecimals ?? 18);
   const amount = depositData
     ? isETH
       ? formatEther(depositData.amount)
-      : formatUnits(depositData.amount, 6)
+      : formatUnits(depositData.amount, decimals)
     : "0";
-  const symbol = isETH ? "ETH" : "Token";
+  const symbol = isETH ? "ETH" : (tokenSymbol ?? "Token");
+
+  const handleClaim = () => {
+    if (!contractAddress || !isContractConfigured || depositId === null) return;
+    writeContract({
+      address: contractAddress,
+      abi: CLAIMABLE_ABI,
+      functionName: "claim",
+      args: [depositId],
+    });
+  };
 
   const isClaimant =
     isConnected &&
@@ -97,7 +152,28 @@ export default function ClaimPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {isLoadingDeposit ? (
+            {/* Invalid deposit ID */}
+            {!isValidDepositId ? (
+              <Card className="border-border/40">
+                <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+                  <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
+                  <h2 className="text-xl font-semibold">Invalid Deposit ID</h2>
+                  <p className="mt-2 text-muted-foreground">
+                    The deposit ID &quot;{rawDepositId}&quot; is not valid. Please check the URL and try again.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : !isContractConfigured ? (
+              <Card className="border-border/40">
+                <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+                  <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
+                  <h2 className="text-xl font-semibold">Service Unavailable</h2>
+                  <p className="mt-2 text-muted-foreground">
+                    The contract is not configured for this network. Please switch networks or contact support.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : isLoadingDeposit ? (
               <Card className="border-border/40">
                 <CardContent className="flex items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -204,7 +280,14 @@ export default function ClaimPage() {
                         {error && (
                           <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive">
                             <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                            <p className="text-sm">{error.message}</p>
+                            <p className="text-sm">
+                              {/* Sanitize error messages - don't expose raw blockchain errors */}
+                              {error.message?.includes("user rejected")
+                                ? "Transaction was rejected by user"
+                                : error.message?.includes("insufficient")
+                                ? "Insufficient balance for this transaction"
+                                : "Transaction failed. Please try again."}
+                            </p>
                           </div>
                         )}
 
