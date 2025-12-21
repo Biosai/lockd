@@ -135,6 +135,14 @@ export function CreateDepositForm() {
     return currentAllowance < parsedAmount;
   }, [isERC20, parsedAmount, currentAllowance]);
 
+  // #region agent log
+  useEffect(() => {
+    if (isERC20 && tokenAddress) {
+      fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:tokenState',message:'Token state for approval',data:{chainId,address,contractAddress,tokenAddress,isContractConfigured,selectedToken,customTokenAddress,parsedAmount:parsedAmount?.toString(),currentAllowance:currentAllowance?.toString(),needsApproval,approvalStep},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3,H4,H5'})}).catch(()=>{});
+    }
+  }, [chainId, address, contractAddress, tokenAddress, isContractConfigured, selectedToken, customTokenAddress, parsedAmount, currentAllowance, needsApproval, approvalStep, isERC20]);
+  // #endregion
+
   // Update approval step when approval transaction succeeds
   useEffect(() => {
     if (isApprovalSuccess) {
@@ -165,9 +173,15 @@ export function CreateDepositForm() {
 
   // Handle ERC20 approval - approve exact amount for security
   const handleApprove = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:handleApprove',message:'handleApprove called',data:{tokenAddress,contractAddress,isContractConfigured,parsedAmount:parsedAmount?.toString(),chainId,selectedToken,customTokenAddress},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3,H4,H5'})}).catch(()=>{});
+    // #endregion
     if (!tokenAddress || !contractAddress || !isContractConfigured || !parsedAmount) return;
     
     setApprovalStep("approving");
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:handleApprove:beforeWrite',message:'About to call writeApproval',data:{tokenAddress,contractAddress,parsedAmount:parsedAmount?.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3,H4'})}).catch(()=>{});
+    // #endregion
     writeApproval({
       address: tokenAddress,
       abi: ERC20_ABI,
@@ -473,6 +487,9 @@ export function CreateDepositForm() {
                     ? "Insufficient balance for this transaction"
                     : "Transaction failed. Please try again."}
                 </p>
+                {/* #region agent log */}
+                {(() => { const bigIntReplacer = (_k: string, v: unknown) => typeof v === 'bigint' ? v.toString() : v; fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:ErrorDisplay',message:'Error displayed to user',data:{errorMessage:error?.message,approvalErrorMessage:approvalError?.message,errorName:error?.name,approvalErrorName:approvalError?.name},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'},bigIntReplacer)}).catch(()=>{}); return null; })()}
+                {/* #endregion */}
               </motion.div>
             )}
           </AnimatePresence>

@@ -10,8 +10,8 @@
     "arbitrumSepolia": {
       "chainId": 421614,
       "name": "Arbitrum Sepolia",
-      "contract": null,
-      "deployedAt": null,
+      "contract": "0x3bBDFD1b7Dc6bA94E0a7aBfE8A5eEc0BEe436019",
+      "deployedAt": "2024-12-21",
       "blockExplorer": "https://sepolia.arbiscan.io"
     }
   },
@@ -52,4 +52,5 @@
     }
   }
 }
+
 
