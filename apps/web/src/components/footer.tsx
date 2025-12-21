@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Github, Twitter } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { useTranslations } from "next-intl";
 
 export function Footer() {
+  const t = useTranslations("footer");
+
   return (
     <footer className="border-t border-border/40 bg-background">
       <div className="mx-auto max-w-7xl px-6 py-12">
@@ -13,7 +18,7 @@ export function Footer() {
               <Logo size="sm" />
             </Link>
             <p className="text-center text-sm text-muted-foreground md:text-left">
-              The trustless way to send crypto to anyone.
+              {t("tagline")}
             </p>
           </div>
 
@@ -23,26 +28,26 @@ export function Footer() {
               href="/#how-it-works"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              How it Works
+              {t("howItWorks")}
             </Link>
             <Link
               href="/#use-cases"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              Use Cases
+              {t("useCases")}
             </Link>
             <Link
               href="/app"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              Launch App
+              {t("launchApp")}
             </Link>
           </div>
 
           {/* Social Links */}
           <div className="flex items-center gap-4">
             <Link
-              href="https://github.com/your-username/lokd"
+              href="https://github.com/Biosai/lockd"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground transition-colors hover:text-foreground"
@@ -63,11 +68,11 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-8 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Lokd. Open source under MIT License.
+            {t("copyright", { year: new Date().getFullYear() })}
           </p>
           <div className="flex items-center gap-4">
             <span className="text-xs text-muted-foreground">
-              Built on Arbitrum & Ethereum
+              {t("builtOn")}
             </span>
           </div>
         </div>

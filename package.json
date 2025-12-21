@@ -1,8 +1,8 @@
 {
-  "name": "lokd",
+  "name": "lockd",
   "version": "1.0.0",
   "private": true,
-  "description": "Lokd - Lock crypto for anyone. Get it back if unclaimed.",
+  "description": "Lockd - Lock crypto for anyone. Get it back if unclaimed.",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -12,23 +12,23 @@
     "build": "npm run build --workspace=apps/web",
     "start": "npm run start --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web",
-    "compile": "npm run compile --workspace=@lokd/contracts",
-    "test:contracts": "npm run test --workspace=@lokd/contracts",
-    "deploy:arbitrum": "npm run deploy:arbitrum --workspace=@lokd/contracts",
-    "deploy:arbitrum-sepolia": "npm run deploy:arbitrum-sepolia --workspace=@lokd/contracts",
-    "deploy:mainnet": "npm run deploy:mainnet --workspace=@lokd/contracts",
-    "deploy:sepolia": "npm run deploy:sepolia --workspace=@lokd/contracts",
-    "deploy:base": "npm run deploy:base --workspace=@lokd/contracts",
-    "deploy:base-sepolia": "npm run deploy:base-sepolia --workspace=@lokd/contracts",
-    "deploy:optimism": "npm run deploy:optimism --workspace=@lokd/contracts",
-    "deploy:polygon": "npm run deploy:polygon --workspace=@lokd/contracts"
+    "compile": "npm run compile --workspace=@lockd/contracts",
+    "test:contracts": "npm run test --workspace=@lockd/contracts",
+    "deploy:arbitrum": "npm run deploy:arbitrum --workspace=@lockd/contracts",
+    "deploy:arbitrum-sepolia": "npm run deploy:arbitrum-sepolia --workspace=@lockd/contracts",
+    "deploy:mainnet": "npm run deploy:mainnet --workspace=@lockd/contracts",
+    "deploy:sepolia": "npm run deploy:sepolia --workspace=@lockd/contracts",
+    "deploy:base": "npm run deploy:base --workspace=@lockd/contracts",
+    "deploy:base-sepolia": "npm run deploy:base-sepolia --workspace=@lockd/contracts",
+    "deploy:optimism": "npm run deploy:optimism --workspace=@lockd/contracts",
+    "deploy:polygon": "npm run deploy:polygon --workspace=@lockd/contracts"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/lokd"
+    "url": "https://github.com/Biosai/lockd"
   },
   "keywords": [
     "ethereum",

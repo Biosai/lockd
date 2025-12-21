@@ -17,7 +17,7 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      {/* Lokd Logo - Stylized padlock with "L" shape */}
+      {/* Lockd Logo - Stylized padlock with "L" shape */}
       <div
         className={cn(
           "relative flex items-center justify-center rounded-lg bg-primary",
@@ -55,7 +55,7 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
       </div>
       {showText && (
         <span className={cn("font-bold tracking-tight", sizes[size].text)}>
-          Lokd
+          Lockd
         </span>
       )}
     </div>

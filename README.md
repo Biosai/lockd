@@ -1,4 +1,4 @@
-# Lokd
+# Lockd
 
 <div align="center">
 
@@ -8,7 +8,7 @@
 [![Built with Next.js](https://img.shields.io/badge/Built%20with-Next.js-black)](https://nextjs.org)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue)](https://soliditylang.org)
 
-[Website](https://lokd.xyz) · [Documentation](#documentation) · [Contributing](CONTRIBUTING.md)
+[Website](https://lockd.xyz) · [Documentation](#documentation) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -16,13 +16,13 @@
 
 ## Overview
 
-Lokd is an open-source, trustless conditional escrow protocol. Lock crypto for a recipient with automatic refund protection. No middleman, purely on-chain.
+Lockd is an open-source, trustless conditional escrow protocol. Lock crypto for a recipient with automatic refund protection. No middleman, purely on-chain.
 
 ### How It Works
 
 ```
 ┌──────────────┐       lock()       ┌──────────────────┐
-│    Sender    │ ─────────────────► │       Lokd       │
+│    Sender    │ ─────────────────► │       Lockd      │
 └──────────────┘                    └──────────────────┘
                                             │
                  ┌──────────────────────────┼──────────────────────────┐
@@ -68,8 +68,8 @@ Lokd is an open-source, trustless conditional escrow protocol. Lock crypto for a
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/lokd.git
-cd lokd
+git clone https://github.com/Biosai/lockd.git
+cd lockd
 
 # Install dependencies
 npm install
@@ -101,7 +101,7 @@ npm run deploy:arbitrum
 ## Project Structure
 
 ```
-lokd/
+lockd/
 ├── apps/
 │   └── web/                # Next.js web application
 │       ├── src/
@@ -208,7 +208,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - Report bugs and suggest features
 - Improve documentation
 - Submit pull requests
-- Share Lokd with others
+- Share Lockd with others
 
 ## License
 
@@ -227,6 +227,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Lock. Claim. Refund.**
 
-[Website](https://lokd.xyz) · [Twitter](https://twitter.com/lokdxyz) · [GitHub](https://github.com/your-username/lokd)
+[Website](https://lockd.xyz) · [Twitter](https://twitter.com/lockdxyz) · [GitHub](https://github.com/Biosai/lockd)
 
 </div>

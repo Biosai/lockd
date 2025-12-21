@@ -1,7 +1,7 @@
 {
-  "name": "@lokd/contracts",
+  "name": "@lockd/contracts",
   "version": "1.0.0",
-  "description": "Lokd smart contracts - trustless conditional escrow",
+  "description": "Lockd smart contracts - trustless conditional escrow",
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",

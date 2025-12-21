@@ -1,6 +1,6 @@
-# Contributing to Lokd
+# Contributing to Lockd
 
-First off, thank you for considering contributing to Lokd! It's people like you that make Lokd such a great tool.
+First off, thank you for considering contributing to Lockd! It's people like you that make Lockd such a great tool.
 
 ## Code of Conduct
 
@@ -54,8 +54,8 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/lokd.git
-cd lokd
+git clone https://github.com/YOUR_USERNAME/lockd.git
+cd lockd
 
 # Install dependencies
 npm install
@@ -70,7 +70,7 @@ npm run test:contracts
 ### Project Structure
 
 ```
-lokd/
+lockd/
 ├── apps/
 │   └── web/              # Next.js web application
 │       ├── src/

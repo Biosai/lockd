@@ -6,6 +6,7 @@ import { CLAIMABLE_ADDRESSES } from "@/lib/contracts";
 import { Inbox, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DepositCard } from "./sent-deposits";
+import { useTranslations } from "next-intl";
 
 interface Deposit {
   id: number;
@@ -22,6 +23,7 @@ export function ReceivedDeposits() {
   const { address } = useAccount();
   const chainId = useChainId();
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
+  const t = useTranslations("receivedDeposits");
   
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,9 +54,9 @@ export function ReceivedDeposits() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
             <Inbox className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold">No deposits to claim</h3>
+          <h3 className="font-semibold">{t("emptyTitle")}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            When someone creates a deposit for your address, it will appear here.
+            {t("emptyDescription")}
           </p>
         </CardContent>
       </Card>
@@ -69,4 +71,3 @@ export function ReceivedDeposits() {
     </div>
   );
 }
-

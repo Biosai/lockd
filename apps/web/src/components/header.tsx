@@ -5,14 +5,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Github, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("header");
 
   const navigateToSection = (id: string) => {
     setMobileMenuOpen(false);
@@ -43,16 +46,16 @@ export function Header() {
             onClick={() => navigateToSection("how-it-works")}
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            How it Works
+            {t("howItWorks")}
           </button>
           <button
             onClick={() => navigateToSection("use-cases")}
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            Use Cases
+            {t("useCases")}
           </button>
           <Link
-            href="https://github.com/your-username/lokd"
+            href="https://github.com/Biosai/lockd"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -63,6 +66,7 @@ export function Header() {
 
         {/* Desktop CTA */}
         <div className="hidden items-center gap-4 md:flex">
+          <LanguageSwitcher />
           <ConnectButton.Custom>
             {({
               account,
@@ -90,7 +94,7 @@ export function Header() {
                     if (!connected) {
                       return (
                         <Button onClick={openConnectModal} size="sm">
-                          Connect Wallet
+                          {t("connectWallet")}
                         </Button>
                       );
                     }
@@ -98,7 +102,7 @@ export function Header() {
                     if (chain.unsupported) {
                       return (
                         <Button onClick={openChainModal} variant="destructive" size="sm">
-                          Wrong network
+                          {t("wrongNetwork")}
                         </Button>
                       );
                     }
@@ -117,6 +121,7 @@ export function Header() {
                               style={{ background: chain.iconBackground }}
                             >
                               {chain.iconUrl && (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                   alt={chain.name ?? "Chain icon"}
                                   src={chain.iconUrl}
@@ -139,7 +144,7 @@ export function Header() {
             }}
           </ConnectButton.Custom>
           <Link href="/app">
-            <Button size="sm">Launch App</Button>
+            <Button size="sm">{t("launchApp")}</Button>
           </Link>
         </div>
 
@@ -170,16 +175,16 @@ export function Header() {
                 onClick={() => navigateToSection("how-it-works")}
                 className="text-left text-sm text-muted-foreground"
               >
-                How it Works
+                {t("howItWorks")}
               </button>
               <button
                 onClick={() => navigateToSection("use-cases")}
                 className="text-left text-sm text-muted-foreground"
               >
-                Use Cases
+                {t("useCases")}
               </button>
               <Link
-                href="https://github.com/your-username/lokd"
+                href="https://github.com/Biosai/lockd"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -188,8 +193,9 @@ export function Header() {
                 GitHub
               </Link>
               <hr className="border-border/40" />
+              <LanguageSwitcher />
               <Link href="/app" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full">Launch App</Button>
+                <Button className="w-full">{t("launchApp")}</Button>
               </Link>
             </div>
           </motion.div>

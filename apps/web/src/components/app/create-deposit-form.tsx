@@ -14,23 +14,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS, ERC20_ABI } from "@/lib/contracts";
+import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS } from "@/lib/contracts";
 import { AlertCircle, CheckCircle2, Loader2, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 type DeadlinePreset = "1h" | "24h" | "7d" | "30d" | "custom";
-
-const DEADLINE_PRESETS: Record<DeadlinePreset, { label: string; seconds: number }> = {
-  "1h": { label: "1 hour", seconds: 60 * 60 },
-  "24h": { label: "24 hours", seconds: 24 * 60 * 60 },
-  "7d": { label: "7 days", seconds: 7 * 24 * 60 * 60 },
-  "30d": { label: "30 days", seconds: 30 * 24 * 60 * 60 },
-  custom: { label: "Custom", seconds: 0 },
-};
 
 export function CreateDepositForm() {
   const { address } = useAccount();
   const chainId = useChainId();
+  const t = useTranslations("createDeposit");
+  
+  const DEADLINE_PRESETS: Record<DeadlinePreset, { label: string; seconds: number }> = {
+    "1h": { label: t("deadline1h"), seconds: 60 * 60 },
+    "24h": { label: t("deadline24h"), seconds: 24 * 60 * 60 },
+    "7d": { label: t("deadline7d"), seconds: 7 * 24 * 60 * 60 },
+    "30d": { label: t("deadline30d"), seconds: 30 * 24 * 60 * 60 },
+    custom: { label: t("deadlineCustom"), seconds: 0 },
+  };
   
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -104,48 +106,47 @@ export function CreateDepositForm() {
   return (
     <Card className="border-border/40">
       <CardHeader>
-        <CardTitle>Create a Deposit</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         <CardDescription>
-          Lock funds for a specific recipient. They can claim anytime, or you can
-          refund after the deadline.
+          {t("description")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Recipient */}
           <div className="space-y-2">
-            <Label htmlFor="recipient">Recipient Address</Label>
+            <Label htmlFor="recipient">{t("recipientLabel")}</Label>
             <Input
               id="recipient"
-              placeholder="0x..."
+              placeholder={t("recipientPlaceholder")}
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               className={recipient && !isValidRecipient ? "border-destructive" : ""}
             />
             {recipient && !isValidRecipient && (
-              <p className="text-xs text-destructive">Please enter a valid address</p>
+              <p className="text-xs text-destructive">{t("invalidAddress")}</p>
             )}
           </div>
 
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title (optional)</Label>
+            <Label htmlFor="title">{t("titleLabel")}</Label>
             <Input
               id="title"
-              placeholder="e.g. Bounty Payment, Birthday Gift..."
+              placeholder={t("titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value.slice(0, 64))}
               maxLength={64}
             />
             <p className="text-xs text-muted-foreground">
-              {title.length}/64 characters
+              {t("titleCharCount", { count: title.length })}
             </p>
           </div>
 
           {/* Amount & Token */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{t("amountLabel")}</Label>
               <Input
                 id="amount"
                 type="number"
@@ -157,7 +158,7 @@ export function CreateDepositForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Token</Label>
+              <Label>{t("tokenLabel")}</Label>
               <Select value={selectedToken} onValueChange={setSelectedToken}>
                 <SelectTrigger>
                   <SelectValue />
@@ -175,7 +176,7 @@ export function CreateDepositForm() {
 
           {/* Deadline */}
           <div className="space-y-2">
-            <Label>Claim Deadline</Label>
+            <Label>{t("deadlineLabel")}</Label>
             <div className="grid grid-cols-5 gap-2">
               {(Object.keys(DEADLINE_PRESETS) as DeadlinePreset[]).map((preset) => (
                 <Button
@@ -215,8 +216,7 @@ export function CreateDepositForm() {
             <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground">
               <p>
-                The recipient can claim these funds at any time. After the deadline,
-                you can refund the funds if unclaimed.
+                {t("infoText")}
               </p>
             </div>
           </div>
@@ -247,9 +247,9 @@ export function CreateDepositForm() {
               >
                 <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
                 <div className="text-sm">
-                  <p className="font-medium">Deposit created successfully!</p>
+                  <p className="font-medium">{t("successTitle")}</p>
                   <p className="text-muted-foreground">
-                    Share the claim link with your recipient.
+                    {t("successDescription")}
                   </p>
                 </div>
               </motion.div>
@@ -266,12 +266,12 @@ export function CreateDepositForm() {
             {isPending || isConfirming ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isPending ? "Confirm in wallet..." : "Processing..."}
+                {isPending ? t("confirmInWallet") : t("processing")}
               </>
             ) : isSuccess ? (
-              "Create Another Deposit"
+              t("createAnother")
             ) : (
-              "Create Deposit"
+              t("createDeposit")
             )}
           </Button>
         </form>
@@ -279,4 +279,3 @@ export function CreateDepositForm() {
     </Card>
   );
 }
-

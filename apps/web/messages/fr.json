@@ -1,0 +1,202 @@
+{
+  "metadata": {
+    "title": "Lokd | Verrouillez des cryptos pour n'importe qui",
+    "description": "La façon sécurisée d'envoyer des cryptos. Verrouillez des fonds pour un destinataire avec remboursement automatique. Sans intermédiaire, 100% on-chain.",
+    "ogDescription": "Verrouillez des cryptos pour n'importe qui. Récupérez-les si non réclamées. Sans confiance, on-chain."
+  },
+  "header": {
+    "howItWorks": "Comment ça marche",
+    "useCases": "Cas d'usage",
+    "connectWallet": "Connecter Wallet",
+    "wrongNetwork": "Mauvais réseau",
+    "launchApp": "Lancer l'App"
+  },
+  "footer": {
+    "tagline": "La façon sécurisée d'envoyer des cryptos à n'importe qui.",
+    "howItWorks": "Comment ça marche",
+    "useCases": "Cas d'usage",
+    "launchApp": "Lancer l'App",
+    "copyright": "© {year} Lokd. Open source sous licence MIT.",
+    "builtOn": "Construit sur Arbitrum & Ethereum"
+  },
+  "home": {
+    "badge": "Open Source & Sans Confiance",
+    "heading": "Verrouillez des cryptos pour n'importe qui.",
+    "headingHighlight": "Récupérez-les",
+    "headingEnd": "si non réclamées.",
+    "subheading": "La façon sécurisée d'envoyer des cryptos. Verrouillez des fonds pour un destinataire avec remboursement automatique. Sans intermédiaire, 100% on-chain.",
+    "launchApp": "Lancer l'App",
+    "viewOnGithub": "Voir sur GitHub",
+    "starOnGithub": "Star sur GitHub",
+    "openSource": "Open Source",
+    "nonCustodial": "Non-Custodial",
+    "fullyOnChain": "100% On-Chain",
+    "ethErc20": "ETH & ERC20"
+  },
+  "howItWorks": {
+    "title": "Comment ça marche",
+    "subtitle": "Simple, sécurisé et direct",
+    "step1": {
+      "number": "01",
+      "title": "Verrouillez les Fonds",
+      "description": "Verrouillez de l'ETH ou n'importe quel token ERC20 pour une adresse de destinataire spécifique. Définissez une date limite pour la réclamation."
+    },
+    "step2": {
+      "number": "02",
+      "title": "Partagez le Lien",
+      "description": "Envoyez le lien de réclamation à votre destinataire. Ils peuvent réclamer à tout moment avant ou après la date limite."
+    },
+    "step3": {
+      "number": "03",
+      "title": "Réclamez ou Remboursez",
+      "description": "Le destinataire réclame les fonds, ou vous les récupérez après la date limite. Vous êtes toujours protégé."
+    }
+  },
+  "features": {
+    "title": "Conçu pour la Confiance",
+    "subtitle": "Sécurité et simplicité au cœur",
+    "trustless": {
+      "title": "Sans Confiance",
+      "description": "Pas d'intermédiaire, uniquement des smart contracts on-chain"
+    },
+    "timeLocked": {
+      "title": "Verrouillage Temporel",
+      "description": "Protection de remboursement automatique après la date limite"
+    },
+    "gasEfficient": {
+      "title": "Efficace en Gas",
+      "description": "Optimisé pour des coûts de transaction minimaux"
+    },
+    "multiToken": {
+      "title": "Multi-Token",
+      "description": "Supporte ETH et n'importe quel token ERC20"
+    }
+  },
+  "useCases": {
+    "title": "Cas d'Usage",
+    "subtitle": "Des paiements aux bounties, Lokd s'adapte à vos besoins",
+    "freelance": {
+      "title": "Paiements Freelance",
+      "description": "Verrouillez le paiement pour un designer ou développeur. Ils réclament quand le travail est livré. Si non livré, remboursement après la date limite.",
+      "example": "Payer 500 USDC pour un design de logo"
+    },
+    "bounties": {
+      "title": "Bounties & Récompenses",
+      "description": "Verrouillez une bounty pour quiconque corrige un bug ou complète une tâche. Assignez-la au contributeur qui livre.",
+      "example": "1 ETH de bounty pour un audit de sécurité"
+    },
+    "p2p": {
+      "title": "Offres P2P",
+      "description": "Faites une offre trustless pour un NFT ou service. Le vendeur réclame pour accepter l'offre, ou vous récupérez vos fonds.",
+      "example": "Offrir 2 ETH pour un NFT rare"
+    },
+    "gifts": {
+      "title": "Cadeaux Crypto",
+      "description": "Envoyez de l'ETH d'anniversaire à un ami. S'ils ne configurent pas de wallet à temps, récupérez-le après la date limite.",
+      "example": "Offrir 0.1 ETH pour un anniversaire"
+    },
+    "invoices": {
+      "title": "Paiements de Factures",
+      "description": "Envoyez un lien de facture. Le client dépose le paiement, vous réclamez en livrant le service.",
+      "example": "Facture pour services de consulting"
+    },
+    "escrow": {
+      "title": "Accords d'Escrow",
+      "description": "Verrouillez des fonds pour tout accord conditionnel. Le destinataire réclame quand les conditions sont remplies.",
+      "example": "Escrow pour achat de domaine"
+    },
+    "exampleLabel": "Exemple :"
+  },
+  "cta": {
+    "title": "Prêt à verrouiller des cryptos en toute confiance ?",
+    "subtitle": "Commencez à utiliser Lokd aujourd'hui. Pas d'inscription requise, connectez simplement votre wallet."
+  },
+  "app": {
+    "connectWallet": {
+      "title": "Connectez Votre Wallet",
+      "description": "Connectez votre wallet pour verrouiller des fonds, réclamer, ou voir votre historique."
+    },
+    "dashboard": {
+      "title": "Tableau de Bord",
+      "description": "Verrouillez des fonds, réclamez, ou gérez votre historique."
+    },
+    "tabs": {
+      "lock": "Verrouiller",
+      "sent": "Envoyés",
+      "received": "Reçus"
+    }
+  },
+  "createDeposit": {
+    "title": "Créer un Dépôt",
+    "description": "Verrouillez des fonds pour un destinataire spécifique. Ils peuvent réclamer à tout moment, ou vous pouvez rembourser après la date limite.",
+    "recipientLabel": "Adresse du Destinataire",
+    "recipientPlaceholder": "0x...",
+    "invalidAddress": "Veuillez entrer une adresse valide",
+    "titleLabel": "Titre (optionnel)",
+    "titlePlaceholder": "ex. Paiement Bounty, Cadeau d'Anniversaire...",
+    "titleCharCount": "{count}/64 caractères",
+    "amountLabel": "Montant",
+    "tokenLabel": "Token",
+    "deadlineLabel": "Date Limite de Réclamation",
+    "deadline1h": "1 heure",
+    "deadline24h": "24 heures",
+    "deadline7d": "7 jours",
+    "deadline30d": "30 jours",
+    "deadlineCustom": "Personnalisé",
+    "infoText": "Le destinataire peut réclamer ces fonds à tout moment. Après la date limite, vous pouvez rembourser les fonds si non réclamés.",
+    "successTitle": "Dépôt créé avec succès !",
+    "successDescription": "Partagez le lien de réclamation avec votre destinataire.",
+    "confirmInWallet": "Confirmez dans le wallet...",
+    "processing": "Traitement...",
+    "createAnother": "Créer un Autre Dépôt",
+    "createDeposit": "Créer le Dépôt"
+  },
+  "sentDeposits": {
+    "emptyTitle": "Pas encore de dépôts",
+    "emptyDescription": "Les dépôts que vous créez apparaîtront ici. Vous pouvez les rembourser après la date limite.",
+    "claimedRefunded": "Réclamé/Remboursé",
+    "to": "À :",
+    "completed": "Terminé",
+    "deadline": "Date limite :",
+    "refund": "Rembourser",
+    "canRefundAfter": "Remboursement possible après la date limite",
+    "transactionSuccess": "Transaction réussie !"
+  },
+  "receivedDeposits": {
+    "emptyTitle": "Aucun dépôt à réclamer",
+    "emptyDescription": "Quand quelqu'un crée un dépôt pour votre adresse, il apparaîtra ici.",
+    "claimed": "Réclamé",
+    "from": "De :",
+    "claim": "Réclamer"
+  },
+  "claimPage": {
+    "notFound": {
+      "title": "Dépôt Non Trouvé",
+      "description": "Ce dépôt n'existe pas ou le lien est invalide."
+    },
+    "alreadyClaimed": {
+      "title": "Déjà Réclamé",
+      "description": "Ce dépôt a déjà été réclamé ou remboursé."
+    },
+    "hasFundsToClaim": "Vous avez des fonds à réclamer !",
+    "sentViaClaimable": "Quelqu'un vous a envoyé des cryptos via Claimable",
+    "amount": "Montant",
+    "from": "De",
+    "recipient": "Destinataire",
+    "deadline": "Date Limite",
+    "expired": "Expiré",
+    "connectToClaim": "Connectez votre wallet pour réclamer",
+    "wrongAddress": "Ce dépôt est pour une autre adresse. Connectez-vous avec {address} pour réclamer.",
+    "successfullyClaimed": "Réclamé avec succès !",
+    "fundsToWallet": "Les fonds ont été envoyés à votre wallet.",
+    "confirmInWallet": "Confirmez dans le wallet...",
+    "processing": "Traitement...",
+    "claim": "Réclamer {amount} {symbol}",
+    "deadlineNote": "Après la date limite, l'expéditeur peut récupérer ces fonds si non réclamés."
+  },
+  "common": {
+    "loading": "Chargement..."
+  }
+}
+
+

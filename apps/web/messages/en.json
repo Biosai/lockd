@@ -1,0 +1,202 @@
+{
+  "metadata": {
+    "title": "Lokd | Lock crypto for anyone",
+    "description": "The trustless way to send crypto. Lock funds for a recipient with automatic refund protection. No middleman, purely on-chain.",
+    "ogDescription": "Lock crypto for anyone. Get it back if unclaimed. Trustless, on-chain."
+  },
+  "header": {
+    "howItWorks": "How it Works",
+    "useCases": "Use Cases",
+    "connectWallet": "Connect Wallet",
+    "wrongNetwork": "Wrong network",
+    "launchApp": "Launch App"
+  },
+  "footer": {
+    "tagline": "The trustless way to send crypto to anyone.",
+    "howItWorks": "How it Works",
+    "useCases": "Use Cases",
+    "launchApp": "Launch App",
+    "copyright": "© {year} Lokd. Open source under MIT License.",
+    "builtOn": "Built on Arbitrum & Ethereum"
+  },
+  "home": {
+    "badge": "Open Source & Trustless",
+    "heading": "Lock crypto for anyone.",
+    "headingHighlight": "Get it back",
+    "headingEnd": "if unclaimed.",
+    "subheading": "The trustless way to send crypto. Lock funds for a recipient with automatic refund protection. No middleman, purely on-chain.",
+    "launchApp": "Launch App",
+    "viewOnGithub": "View on GitHub",
+    "starOnGithub": "Star on GitHub",
+    "openSource": "Open Source",
+    "nonCustodial": "Non-Custodial",
+    "fullyOnChain": "Fully On-Chain",
+    "ethErc20": "ETH & ERC20"
+  },
+  "howItWorks": {
+    "title": "How it Works",
+    "subtitle": "Simple, secure, and straightforward",
+    "step1": {
+      "number": "01",
+      "title": "Lock Funds",
+      "description": "Lock ETH or any ERC20 token for a specific recipient address. Set a deadline for claiming."
+    },
+    "step2": {
+      "number": "02",
+      "title": "Share the Link",
+      "description": "Send the claim link to your recipient. They can claim anytime before or after the deadline."
+    },
+    "step3": {
+      "number": "03",
+      "title": "Claim or Refund",
+      "description": "Recipient claims the funds, or you reclaim them after the deadline. You're always protected."
+    }
+  },
+  "features": {
+    "title": "Built for Trust",
+    "subtitle": "Security and simplicity at the core",
+    "trustless": {
+      "title": "Trustless",
+      "description": "No middleman, purely on-chain smart contracts"
+    },
+    "timeLocked": {
+      "title": "Time-Locked",
+      "description": "Automatic refund protection after deadline"
+    },
+    "gasEfficient": {
+      "title": "Gas Efficient",
+      "description": "Optimized for minimal transaction costs"
+    },
+    "multiToken": {
+      "title": "Multi-Token",
+      "description": "Supports ETH and any ERC20 token"
+    }
+  },
+  "useCases": {
+    "title": "Use Cases",
+    "subtitle": "From payments to bounties, Lokd adapts to your needs",
+    "freelance": {
+      "title": "Freelance Payments",
+      "description": "Lock payment for a designer or developer. They claim when work is delivered. If not delivered, refund after deadline.",
+      "example": "Pay 500 USDC for a logo design"
+    },
+    "bounties": {
+      "title": "Bounties & Rewards",
+      "description": "Lock a bounty for whoever fixes a bug or completes a task. Assign it to the contributor who delivers.",
+      "example": "1 ETH bounty for security audit"
+    },
+    "p2p": {
+      "title": "P2P Offers",
+      "description": "Make a trustless offer for an NFT or service. Seller claims to accept the deal, or you reclaim your funds.",
+      "example": "Offer 2 ETH for a rare NFT"
+    },
+    "gifts": {
+      "title": "Crypto Gifts",
+      "description": "Send birthday ETH to a friend. If they don't set up a wallet in time, reclaim it after the deadline.",
+      "example": "Gift 0.1 ETH for a birthday"
+    },
+    "invoices": {
+      "title": "Invoice Payments",
+      "description": "Send an invoice link. Client deposits the payment, you claim upon delivering the service.",
+      "example": "Invoice for consulting services"
+    },
+    "escrow": {
+      "title": "Escrow Agreements",
+      "description": "Lock funds for any conditional agreement. The recipient claims when conditions are met.",
+      "example": "Escrow for domain purchase"
+    },
+    "exampleLabel": "Example:"
+  },
+  "cta": {
+    "title": "Ready to lock crypto with confidence?",
+    "subtitle": "Start using Lokd today. No signup required, just connect your wallet."
+  },
+  "app": {
+    "connectWallet": {
+      "title": "Connect Your Wallet",
+      "description": "Connect your wallet to lock funds, claim, or view your history."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Lock funds, claim, or manage your history."
+    },
+    "tabs": {
+      "lock": "Lock",
+      "sent": "Sent",
+      "received": "Received"
+    }
+  },
+  "createDeposit": {
+    "title": "Create a Deposit",
+    "description": "Lock funds for a specific recipient. They can claim anytime, or you can refund after the deadline.",
+    "recipientLabel": "Recipient Address",
+    "recipientPlaceholder": "0x...",
+    "invalidAddress": "Please enter a valid address",
+    "titleLabel": "Title (optional)",
+    "titlePlaceholder": "e.g. Bounty Payment, Birthday Gift...",
+    "titleCharCount": "{count}/64 characters",
+    "amountLabel": "Amount",
+    "tokenLabel": "Token",
+    "deadlineLabel": "Claim Deadline",
+    "deadline1h": "1 hour",
+    "deadline24h": "24 hours",
+    "deadline7d": "7 days",
+    "deadline30d": "30 days",
+    "deadlineCustom": "Custom",
+    "infoText": "The recipient can claim these funds at any time. After the deadline, you can refund the funds if unclaimed.",
+    "successTitle": "Deposit created successfully!",
+    "successDescription": "Share the claim link with your recipient.",
+    "confirmInWallet": "Confirm in wallet...",
+    "processing": "Processing...",
+    "createAnother": "Create Another Deposit",
+    "createDeposit": "Create Deposit"
+  },
+  "sentDeposits": {
+    "emptyTitle": "No deposits yet",
+    "emptyDescription": "Deposits you create will appear here. You can refund them after the deadline.",
+    "claimedRefunded": "Claimed/Refunded",
+    "to": "To:",
+    "completed": "Completed",
+    "deadline": "Deadline:",
+    "refund": "Refund",
+    "canRefundAfter": "Can refund after deadline",
+    "transactionSuccess": "Transaction successful!"
+  },
+  "receivedDeposits": {
+    "emptyTitle": "No deposits to claim",
+    "emptyDescription": "When someone creates a deposit for your address, it will appear here.",
+    "claimed": "Claimed",
+    "from": "From:",
+    "claim": "Claim"
+  },
+  "claimPage": {
+    "notFound": {
+      "title": "Deposit Not Found",
+      "description": "This deposit does not exist or the link is invalid."
+    },
+    "alreadyClaimed": {
+      "title": "Already Claimed",
+      "description": "This deposit has already been claimed or refunded."
+    },
+    "hasFundsToClaim": "You have funds to claim!",
+    "sentViaClaimable": "Someone has sent you crypto via Claimable",
+    "amount": "Amount",
+    "from": "From",
+    "recipient": "Recipient",
+    "deadline": "Deadline",
+    "expired": "Expired",
+    "connectToClaim": "Connect your wallet to claim",
+    "wrongAddress": "This deposit is for a different address. Connect with {address} to claim.",
+    "successfullyClaimed": "Successfully claimed!",
+    "fundsToWallet": "The funds have been sent to your wallet.",
+    "confirmInWallet": "Confirm in wallet...",
+    "processing": "Processing...",
+    "claim": "Claim {amount} {symbol}",
+    "deadlineNote": "After the deadline, the sender can reclaim these funds if unclaimed."
+  },
+  "common": {
+    "loading": "Loading..."
+  }
+}
+
+
