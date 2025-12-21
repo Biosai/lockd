@@ -16,7 +16,7 @@
     "howItWorks": "Comment ça marche",
     "useCases": "Cas d'usage",
     "launchApp": "Lancer l'App",
-    "copyright": "© {year} Lokd. Open source sous licence MIT.",
+    "copyright": "© {year} Lockd. Open source sous licence MIT.",
     "builtOn": "Construit sur Arbitrum & Ethereum"
   },
   "home": {
@@ -74,7 +74,7 @@
   },
   "useCases": {
     "title": "Cas d'Usage",
-    "subtitle": "Des paiements aux bounties, Lokd s'adapte à vos besoins",
+    "subtitle": "Des paiements aux bounties, Lockd s'adapte à vos besoins",
     "freelance": {
       "title": "Paiements Freelance",
       "description": "Verrouillez le paiement pour un designer ou développeur. Ils réclament quand le travail est livré. Si non livré, remboursement après la date limite.",
@@ -109,7 +109,7 @@
   },
   "cta": {
     "title": "Prêt à verrouiller des cryptos en toute confiance ?",
-    "subtitle": "Commencez à utiliser Lokd aujourd'hui. Pas d'inscription requise, connectez simplement votre wallet."
+    "subtitle": "Commencez à utiliser Lockd aujourd'hui. Pas d'inscription requise, connectez simplement votre wallet."
   },
   "app": {
     "connectWallet": {

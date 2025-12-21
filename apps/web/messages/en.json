@@ -16,7 +16,7 @@
     "howItWorks": "How it Works",
     "useCases": "Use Cases",
     "launchApp": "Launch App",
-    "copyright": "© {year} Lokd. Open source under MIT License.",
+    "copyright": "© {year} Lockd. Open source under MIT License.",
     "builtOn": "Built on Arbitrum & Ethereum"
   },
   "home": {
@@ -74,7 +74,7 @@
   },
   "useCases": {
     "title": "Use Cases",
-    "subtitle": "From payments to bounties, Lokd adapts to your needs",
+    "subtitle": "From payments to bounties, Lockd adapts to your needs",
     "freelance": {
       "title": "Freelance Payments",
       "description": "Lock payment for a designer or developer. They claim when work is delivered. If not delivered, refund after deadline.",
@@ -109,7 +109,7 @@
   },
   "cta": {
     "title": "Ready to lock crypto with confidence?",
-    "subtitle": "Start using Lokd today. No signup required, just connect your wallet."
+    "subtitle": "Start using Lockd today. No signup required, just connect your wallet."
   },
   "app": {
     "connectWallet": {

@@ -3,6 +3,7 @@
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
+import { StatsCards } from "@/components/app/stats-cards";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -229,6 +230,11 @@ export default function Home() {
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   <span>{t("ethErc20")}</span>
                 </div>
+              </motion.div>
+
+              {/* Platform Stats */}
+              <motion.div variants={fadeInUp} className="mt-12 w-full max-w-2xl">
+                <StatsCards />
               </motion.div>
             </motion.div>
           </div>
