@@ -1,14 +1,12 @@
 import { Address } from "viem";
 
-// Contract addresses per chain
+// Contract addresses per chain (Arbitrum only)
 export const CLAIMABLE_ADDRESSES: Record<number, Address> = {
   42161: "0x0000000000000000000000000000000000000000", // Arbitrum - to be deployed
   421614: "0x0000000000000000000000000000000000000000", // Arbitrum Sepolia - to be deployed
-  1: "0x0000000000000000000000000000000000000000", // Mainnet - to be deployed
-  11155111: "0x0000000000000000000000000000000000000000", // Sepolia - to be deployed
 };
 
-// Common token addresses per chain
+// Common token addresses per chain (Arbitrum only)
 export const TOKENS: Record<
   number,
   Record<string, { address: Address; symbol: string; decimals: number }>
@@ -40,25 +38,10 @@ export const TOKENS: Record<
       decimals: 18,
     },
   },
-  1: {
+  421614: {
     ETH: {
       address: "0x0000000000000000000000000000000000000000",
       symbol: "ETH",
-      decimals: 18,
-    },
-    USDC: {
-      address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      symbol: "USDC",
-      decimals: 6,
-    },
-    USDT: {
-      address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-      symbol: "USDT",
-      decimals: 6,
-    },
-    WETH: {
-      address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      symbol: "WETH",
       decimals: 18,
     },
   },
@@ -70,6 +53,7 @@ export const CLAIMABLE_ABI = [
     inputs: [
       { name: "claimant", type: "address" },
       { name: "deadline", type: "uint256" },
+      { name: "title", type: "string" },
     ],
     name: "depositETH",
     outputs: [{ name: "depositId", type: "uint256" }],
@@ -82,6 +66,7 @@ export const CLAIMABLE_ABI = [
       { name: "token", type: "address" },
       { name: "amount", type: "uint256" },
       { name: "deadline", type: "uint256" },
+      { name: "title", type: "string" },
     ],
     name: "depositToken",
     outputs: [{ name: "depositId", type: "uint256" }],
@@ -112,6 +97,7 @@ export const CLAIMABLE_ABI = [
       { name: "amount", type: "uint256" },
       { name: "deadline", type: "uint256" },
       { name: "claimed", type: "bool" },
+      { name: "title", type: "string" },
     ],
     stateMutability: "view",
     type: "function",
@@ -132,6 +118,7 @@ export const CLAIMABLE_ABI = [
       { indexed: false, name: "token", type: "address" },
       { indexed: false, name: "amount", type: "uint256" },
       { indexed: false, name: "deadline", type: "uint256" },
+      { indexed: false, name: "title", type: "string" },
     ],
     name: "DepositCreated",
     type: "event",
@@ -200,4 +187,3 @@ export const ERC20_ABI = [
     type: "function",
   },
 ] as const;
-

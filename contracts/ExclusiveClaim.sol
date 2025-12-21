@@ -21,6 +21,7 @@ contract ExclusiveClaim is ReentrancyGuard {
         uint256 amount;         // Amount deposited
         uint256 deadline;       // Timestamp after which depositor can also withdraw
         bool claimed;           // Whether the deposit has been claimed/refunded
+        string title;           // Optional title/label for the deposit
     }
 
     /// @notice Mapping from deposit ID to Deposit struct
@@ -36,7 +37,8 @@ contract ExclusiveClaim is ReentrancyGuard {
         address indexed claimant,
         address token,
         uint256 amount,
-        uint256 deadline
+        uint256 deadline,
+        string title
     );
 
     /// @notice Emitted when a deposit is claimed by the claimant
@@ -76,11 +78,13 @@ contract ExclusiveClaim is ReentrancyGuard {
      * @notice Create a new deposit for ETH
      * @param claimant The address that can claim this deposit
      * @param deadline The timestamp after which the depositor can also withdraw
+     * @param title Optional title/label for the deposit
      * @return depositId The ID of the newly created deposit
      */
     function depositETH(
         address claimant,
-        uint256 deadline
+        uint256 deadline,
+        string calldata title
     ) external payable nonReentrant returns (uint256 depositId) {
         if (msg.value == 0) revert ZeroAmount();
         if (claimant == address(0)) revert ZeroClaimant();
@@ -94,10 +98,11 @@ contract ExclusiveClaim is ReentrancyGuard {
             token: address(0),
             amount: msg.value,
             deadline: deadline,
-            claimed: false
+            claimed: false,
+            title: title
         });
 
-        emit DepositCreated(depositId, msg.sender, claimant, address(0), msg.value, deadline);
+        emit DepositCreated(depositId, msg.sender, claimant, address(0), msg.value, deadline, title);
     }
 
     /**
@@ -106,13 +111,15 @@ contract ExclusiveClaim is ReentrancyGuard {
      * @param token The ERC20 token address
      * @param amount The amount of tokens to deposit
      * @param deadline The timestamp after which the depositor can also withdraw
+     * @param title Optional title/label for the deposit
      * @return depositId The ID of the newly created deposit
      */
     function depositToken(
         address claimant,
         address token,
         uint256 amount,
-        uint256 deadline
+        uint256 deadline,
+        string calldata title
     ) external nonReentrant returns (uint256 depositId) {
         if (amount == 0) revert ZeroAmount();
         if (claimant == address(0)) revert ZeroClaimant();
@@ -130,10 +137,11 @@ contract ExclusiveClaim is ReentrancyGuard {
             token: token,
             amount: amount,
             deadline: deadline,
-            claimed: false
+            claimed: false,
+            title: title
         });
 
-        emit DepositCreated(depositId, msg.sender, claimant, token, amount, deadline);
+        emit DepositCreated(depositId, msg.sender, claimant, token, amount, deadline, title);
     }
 
     /**
@@ -184,6 +192,7 @@ contract ExclusiveClaim is ReentrancyGuard {
      * @return amount The deposit amount
      * @return deadline The claim deadline
      * @return claimed Whether already claimed/refunded
+     * @return title The deposit title/label
      */
     function getDeposit(uint256 depositId) external view returns (
         address depositor,
@@ -191,11 +200,12 @@ contract ExclusiveClaim is ReentrancyGuard {
         address token,
         uint256 amount,
         uint256 deadline,
-        bool claimed
+        bool claimed,
+        string memory title
     ) {
         if (depositId >= depositCount) revert DepositNotFound();
         Deposit storage d = deposits[depositId];
-        return (d.depositor, d.claimant, d.token, d.amount, d.deadline, d.claimed);
+        return (d.depositor, d.claimant, d.token, d.amount, d.deadline, d.claimed, d.title);
     }
 
     /**

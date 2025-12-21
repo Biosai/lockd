@@ -37,6 +37,7 @@ export function CreateDepositForm() {
   const [selectedToken, setSelectedToken] = useState("ETH");
   const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>("24h");
   const [customDeadline, setCustomDeadline] = useState("");
+  const [title, setTitle] = useState("");
   
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
@@ -67,7 +68,7 @@ export function CreateDepositForm() {
         address: contractAddress,
         abi: CLAIMABLE_ABI,
         functionName: "depositETH",
-        args: [recipient as `0x${string}`, deadline],
+        args: [recipient as `0x${string}`, deadline, title],
         value: parseEther(amount),
       });
     } else {
@@ -85,6 +86,7 @@ export function CreateDepositForm() {
           tokenAddress,
           tokenAmount,
           deadline,
+          title,
         ],
       });
     }
@@ -96,6 +98,7 @@ export function CreateDepositForm() {
     setSelectedToken("ETH");
     setDeadlinePreset("24h");
     setCustomDeadline("");
+    setTitle("");
   };
 
   return (
@@ -122,6 +125,21 @@ export function CreateDepositForm() {
             {recipient && !isValidRecipient && (
               <p className="text-xs text-destructive">Please enter a valid address</p>
             )}
+          </div>
+
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="title">Title (optional)</Label>
+            <Input
+              id="title"
+              placeholder="e.g. Bounty Payment, Birthday Gift..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value.slice(0, 64))}
+              maxLength={64}
+            />
+            <p className="text-xs text-muted-foreground">
+              {title.length}/64 characters
+            </p>
           </div>
 
           {/* Amount & Token */}

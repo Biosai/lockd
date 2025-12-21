@@ -15,6 +15,7 @@ interface Deposit {
   amount: bigint;
   deadline: bigint;
   claimed: boolean;
+  title: string;
 }
 
 export function ReceivedDeposits() {

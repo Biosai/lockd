@@ -5,8 +5,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Gift, Sparkles } from "lucide-react";
 
-// Replace with Martin's actual wallet address
-const MARTIN_ADDRESS = "0x0000000000000000000000000000000000000000";
+// Martin's wallet address
+const MARTIN_ADDRESS = "0x11B7fdd4c2c51008906fb9a6433De51821eB0079";
 
 const STORAGE_KEY = "christmas-banner-dismissed";
 

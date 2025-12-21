@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -10,13 +11,22 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
+  const navigateToSection = (id: string) => {
     setMobileMenuOpen(false);
+    
+    // If we're on the home page, just scroll to the section
+    if (pathname === "/") {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // If we're on another page, navigate to home with hash
+      router.push(`/#${id}`);
+    }
   };
 
   return (
@@ -30,13 +40,13 @@ export function Header() {
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
           <button
-            onClick={() => scrollToSection("how-it-works")}
+            onClick={() => navigateToSection("how-it-works")}
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             How it Works
           </button>
           <button
-            onClick={() => scrollToSection("use-cases")}
+            onClick={() => navigateToSection("use-cases")}
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Use Cases
@@ -157,13 +167,13 @@ export function Header() {
           >
             <div className="flex flex-col gap-4 px-6 py-4">
               <button
-                onClick={() => scrollToSection("how-it-works")}
+                onClick={() => navigateToSection("how-it-works")}
                 className="text-left text-sm text-muted-foreground"
               >
                 How it Works
               </button>
               <button
-                onClick={() => scrollToSection("use-cases")}
+                onClick={() => navigateToSection("use-cases")}
                 className="text-left text-sm text-muted-foreground"
               >
                 Use Cases

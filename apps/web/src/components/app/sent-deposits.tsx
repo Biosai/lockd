@@ -18,6 +18,7 @@ interface Deposit {
   amount: bigint;
   deadline: bigint;
   claimed: boolean;
+  title: string;
 }
 
 export function SentDeposits() {
@@ -126,6 +127,11 @@ export function DepositCard({ deposit, type }: DepositCardProps) {
     >
       <div className="flex items-start justify-between">
         <div>
+          {deposit.title && (
+            <p className="text-sm font-medium text-muted-foreground mb-1">
+              {deposit.title}
+            </p>
+          )}
           <div className="flex items-center gap-2">
             <span className="font-mono text-lg font-semibold">
               {amount} {symbol}

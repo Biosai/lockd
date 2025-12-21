@@ -65,6 +65,7 @@ export default function ClaimPage() {
         amount: deposit[3],
         deadline: deposit[4],
         claimed: deposit[5],
+        title: deposit[6],
       }
     : null;
 
@@ -127,10 +128,21 @@ export default function ClaimPage() {
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20">
                     <Gift className="h-8 w-8 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold">You have funds to claim!</h2>
-                  <p className="mt-2 text-muted-foreground">
-                    Someone has sent you crypto via Claimable
-                  </p>
+                  {depositData.title ? (
+                    <>
+                      <h2 className="text-2xl font-bold">{depositData.title}</h2>
+                      <p className="mt-2 text-muted-foreground">
+                        You have funds to claim!
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold">You have funds to claim!</h2>
+                      <p className="mt-2 text-muted-foreground">
+                        Someone has sent you crypto via Claimable
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <CardContent className="p-6">
