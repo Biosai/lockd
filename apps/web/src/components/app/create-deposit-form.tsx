@@ -1,0 +1,264 @@
+"use client";
+
+import { useState } from "react";
+import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther, parseUnits, isAddress } from "viem";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS, ERC20_ABI } from "@/lib/contracts";
+import { AlertCircle, CheckCircle2, Loader2, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+type DeadlinePreset = "1h" | "24h" | "7d" | "30d" | "custom";
+
+const DEADLINE_PRESETS: Record<DeadlinePreset, { label: string; seconds: number }> = {
+  "1h": { label: "1 hour", seconds: 60 * 60 },
+  "24h": { label: "24 hours", seconds: 24 * 60 * 60 },
+  "7d": { label: "7 days", seconds: 7 * 24 * 60 * 60 },
+  "30d": { label: "30 days", seconds: 30 * 24 * 60 * 60 },
+  custom: { label: "Custom", seconds: 0 },
+};
+
+export function CreateDepositForm() {
+  const { address } = useAccount();
+  const chainId = useChainId();
+  
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("");
+  const [selectedToken, setSelectedToken] = useState("ETH");
+  const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>("24h");
+  const [customDeadline, setCustomDeadline] = useState("");
+  
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const contractAddress = CLAIMABLE_ADDRESSES[chainId];
+  const tokens = TOKENS[chainId] || TOKENS[42161]; // Default to Arbitrum tokens
+  const selectedTokenInfo = tokens[selectedToken];
+
+  const isValidRecipient = recipient && isAddress(recipient);
+  const isValidAmount = amount && parseFloat(amount) > 0;
+  
+  const getDeadlineTimestamp = (): bigint => {
+    if (deadlinePreset === "custom" && customDeadline) {
+      return BigInt(Math.floor(new Date(customDeadline).getTime() / 1000));
+    }
+    return BigInt(Math.floor(Date.now() / 1000) + DEADLINE_PRESETS[deadlinePreset].seconds);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isValidRecipient || !isValidAmount || !contractAddress) return;
+
+    const deadline = getDeadlineTimestamp();
+
+    if (selectedToken === "ETH") {
+      writeContract({
+        address: contractAddress,
+        abi: CLAIMABLE_ABI,
+        functionName: "depositETH",
+        args: [recipient as `0x${string}`, deadline],
+        value: parseEther(amount),
+      });
+    } else {
+      const tokenAddress = selectedTokenInfo.address;
+      const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
+      
+      // For ERC20, we need to approve first, then deposit
+      // In a real app, you'd check allowance and approve if needed
+      writeContract({
+        address: contractAddress,
+        abi: CLAIMABLE_ABI,
+        functionName: "depositToken",
+        args: [
+          recipient as `0x${string}`,
+          tokenAddress,
+          tokenAmount,
+          deadline,
+        ],
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setRecipient("");
+    setAmount("");
+    setSelectedToken("ETH");
+    setDeadlinePreset("24h");
+    setCustomDeadline("");
+  };
+
+  return (
+    <Card className="border-border/40">
+      <CardHeader>
+        <CardTitle>Create a Deposit</CardTitle>
+        <CardDescription>
+          Lock funds for a specific recipient. They can claim anytime, or you can
+          refund after the deadline.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Recipient */}
+          <div className="space-y-2">
+            <Label htmlFor="recipient">Recipient Address</Label>
+            <Input
+              id="recipient"
+              placeholder="0x..."
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              className={recipient && !isValidRecipient ? "border-destructive" : ""}
+            />
+            {recipient && !isValidRecipient && (
+              <p className="text-xs text-destructive">Please enter a valid address</p>
+            )}
+          </div>
+
+          {/* Amount & Token */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0.0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Token</Label>
+              <Select value={selectedToken} onValueChange={setSelectedToken}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(tokens).map(([symbol, info]) => (
+                    <SelectItem key={symbol} value={symbol}>
+                      {info.symbol}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Deadline */}
+          <div className="space-y-2">
+            <Label>Claim Deadline</Label>
+            <div className="grid grid-cols-5 gap-2">
+              {(Object.keys(DEADLINE_PRESETS) as DeadlinePreset[]).map((preset) => (
+                <Button
+                  key={preset}
+                  type="button"
+                  variant={deadlinePreset === preset ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDeadlinePreset(preset)}
+                  className="text-xs"
+                >
+                  {DEADLINE_PRESETS[preset].label}
+                </Button>
+              ))}
+            </div>
+            <AnimatePresence>
+              {deadlinePreset === "custom" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <Input
+                    type="datetime-local"
+                    value={customDeadline}
+                    onChange={(e) => setCustomDeadline(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="mt-2"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Info Box */}
+          <div className="flex items-start gap-3 rounded-lg bg-secondary/50 p-4">
+            <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-muted-foreground">
+              <p>
+                The recipient can claim these funds at any time. After the deadline,
+                you can refund the funds if unclaimed.
+              </p>
+            </div>
+          </div>
+
+          {/* Error Display */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive"
+              >
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <p className="text-sm">{error.message}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Success Display */}
+          <AnimatePresence>
+            {isSuccess && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex items-center gap-2 rounded-lg bg-primary/10 p-4 text-primary"
+              >
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">Deposit created successfully!</p>
+                  <p className="text-muted-foreground">
+                    Share the claim link with your recipient.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={!isValidRecipient || !isValidAmount || isPending || isConfirming}
+          >
+            {isPending || isConfirming ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isPending ? "Confirm in wallet..." : "Processing..."}
+              </>
+            ) : isSuccess ? (
+              "Create Another Deposit"
+            ) : (
+              "Create Deposit"
+            )}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+

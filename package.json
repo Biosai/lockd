@@ -1,0 +1,46 @@
+{
+  "name": "lokd",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lokd - Lock crypto for anyone. Get it back if unclaimed.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web",
+    "compile": "npm run compile --workspace=@lokd/contracts",
+    "test:contracts": "npm run test --workspace=@lokd/contracts",
+    "deploy:arbitrum": "npm run deploy:arbitrum --workspace=@lokd/contracts",
+    "deploy:arbitrum-sepolia": "npm run deploy:arbitrum-sepolia --workspace=@lokd/contracts",
+    "deploy:mainnet": "npm run deploy:mainnet --workspace=@lokd/contracts",
+    "deploy:sepolia": "npm run deploy:sepolia --workspace=@lokd/contracts",
+    "deploy:base": "npm run deploy:base --workspace=@lokd/contracts",
+    "deploy:base-sepolia": "npm run deploy:base-sepolia --workspace=@lokd/contracts",
+    "deploy:optimism": "npm run deploy:optimism --workspace=@lokd/contracts",
+    "deploy:polygon": "npm run deploy:polygon --workspace=@lokd/contracts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/lokd"
+  },
+  "keywords": [
+    "ethereum",
+    "escrow",
+    "crypto",
+    "payments",
+    "defi",
+    "web3",
+    "arbitrum",
+    "trustless",
+    "lock"
+  ],
+  "author": "",
+  "license": "MIT"
+}

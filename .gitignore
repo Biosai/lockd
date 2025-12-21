@@ -1,0 +1,37 @@
+node_modules
+.env
+.env.local
+.env.*.local
+coverage
+coverage.json
+typechain
+typechain-types
+cache
+artifacts
+.openzeppelin
+
+# Hardhat files
+cache
+artifacts
+
+# IDE
+.idea
+.vscode
+
+# OS
+.DS_Store
+
+# Next.js
+.next
+out
+
+# Netlify
+.netlify
+
+# Logs
+*.log
+npm-debug.log*
+
+# Package lock files (using npm)
+yarn.lock
+pnpm-lock.yaml
