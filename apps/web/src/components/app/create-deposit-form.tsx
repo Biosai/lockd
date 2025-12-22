@@ -149,13 +149,6 @@ export function CreateDepositForm() {
     return currentAllowance < parsedAmount;
   }, [isERC20, parsedAmount, currentAllowance]);
 
-  // #region agent log
-  useEffect(() => {
-    if (isERC20 && tokenAddress) {
-      fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:tokenState',message:'Token state for approval',data:{chainId,address,contractAddress,tokenAddress,isContractConfigured,selectedToken,customTokenAddress,parsedAmount:parsedAmount?.toString(),currentAllowance:currentAllowance?.toString(),needsApproval,approvalStep},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3,H4,H5'})}).catch(()=>{});
-    }
-  }, [chainId, address, contractAddress, tokenAddress, isContractConfigured, selectedToken, customTokenAddress, parsedAmount, currentAllowance, needsApproval, approvalStep, isERC20]);
-  // #endregion
 
   // Update approval step when approval transaction succeeds and auto-trigger deposit
   useEffect(() => {
@@ -555,6 +548,8 @@ export function CreateDepositForm() {
                 <p className="text-sm">
                   {/* Sanitize error message - don't expose raw blockchain errors */}
                   {(() => {
+                    // Log raw error for debugging
+                    console.error("[Transaction Error]", error || approvalError);
                     const msg = (error?.message || approvalError?.message)?.toLowerCase() || "";
                     if (msg.includes("user rejected") || msg.includes("user denied")) {
                       return "Transaction was rejected by user";
@@ -578,9 +573,6 @@ export function CreateDepositForm() {
                     return "Transaction failed. Please try again.";
                   })()}
                 </p>
-                {/* #region agent log */}
-                {(() => { const bigIntReplacer = (_k: string, v: unknown) => typeof v === 'bigint' ? v.toString() : v; fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:ErrorDisplay',message:'Error displayed to user',data:{errorMessage:error?.message,approvalErrorMessage:approvalError?.message,errorName:error?.name,approvalErrorName:approvalError?.name},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'},bigIntReplacer)}).catch(()=>{}); return null; })()}
-                {/* #endregion */}
               </motion.div>
             )}
           </AnimatePresence>

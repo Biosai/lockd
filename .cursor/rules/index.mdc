@@ -26,6 +26,17 @@ This is a monorepo containing smart contracts and a web application for a trustl
 - **Testing**: Hardhat (Mocha/Chai) for contracts, 100% coverage required
 - **Package Manager**: npm with workspaces
 
+## Critical: Build Verification
+
+**ALWAYS verify the build succeeds after making any code changes.**
+
+Before considering any task complete:
+1. Run `npm run build` in `apps/web/` to verify the Next.js build passes
+2. Run `npm run compile` to verify smart contracts compile
+3. Fix any build errors before finishing
+
+Never push or commit code without confirming the build passes first.
+
 ## General Conventions
 
 ### Code Style

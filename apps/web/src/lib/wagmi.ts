@@ -1,16 +1,16 @@
 import { createConfig, http, cookieStorage, createStorage } from "wagmi";
 import { arbitrum, arbitrumSepolia } from "wagmi/chains";
 
-// Build RPC URLs with Alchemy if available (works on both server and client)
+// Build RPC URLs with Alchemy if available, fallback to public RPCs
 const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 
 const arbitrumRpc = alchemyKey 
   ? `https://arb-mainnet.g.alchemy.com/v2/${alchemyKey}`
-  : undefined;
+  : "https://arb1.arbitrum.io/rpc";
 
 const arbitrumSepoliaRpc = alchemyKey
   ? `https://arb-sepolia.g.alchemy.com/v2/${alchemyKey}`
-  : undefined;
+  : "https://sepolia-rollup.arbitrum.io/rpc";
 
 // Storage configuration for persisting wallet connection (SSR compatible)
 const storage = createStorage({
