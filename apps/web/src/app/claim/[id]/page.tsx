@@ -132,6 +132,7 @@ export default function ClaimPage() {
       abi: CLAIMABLE_ABI,
       functionName: "claim",
       args: [depositId],
+      chainId,
     });
   };
 
