@@ -54,7 +54,7 @@ export function CreateDepositForm() {
   const [approvalStep, setApprovalStep] = useState<ApprovalStep>("idle");
   
   // Deposit transaction
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { writeContract, data: hash, isPending, error, reset: resetDeposit } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   // Approval transaction (separate from deposit)
@@ -62,7 +62,8 @@ export function CreateDepositForm() {
     writeContract: writeApproval, 
     data: approvalHash, 
     isPending: isApprovalPending, 
-    error: approvalError 
+    error: approvalError,
+    reset: resetApproval 
   } = useWriteContract();
   const { isLoading: isApprovalConfirming, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({ 
     hash: approvalHash 
@@ -71,6 +72,13 @@ export function CreateDepositForm() {
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
   const isContractConfigured = isValidContractAddress(contractAddress);
   const tokens = TOKENS[chainId] || TOKENS[42161]; // Default to Arbitrum tokens
+
+  // Reset selected token if it doesn't exist on current chain
+  useEffect(() => {
+    if (selectedToken !== "ETH" && selectedToken !== "CUSTOM" && !tokens[selectedToken]) {
+      setSelectedToken("ETH");
+    }
+  }, [chainId, tokens, selectedToken]);
 
   // Fetch custom token metadata
   const isValidCustomAddress = customTokenAddress.length > 0 && isAddress(customTokenAddress);
@@ -143,13 +151,40 @@ export function CreateDepositForm() {
   }, [chainId, address, contractAddress, tokenAddress, isContractConfigured, selectedToken, customTokenAddress, parsedAmount, currentAllowance, needsApproval, approvalStep, isERC20]);
   // #endregion
 
-  // Update approval step when approval transaction succeeds
+  // Update approval step when approval transaction succeeds and auto-trigger deposit
   useEffect(() => {
-    if (isApprovalSuccess) {
+    if (isApprovalSuccess && approvalStep === "approving") {
       setApprovalStep("approved");
       refetchAllowance();
+      
+      // Auto-trigger deposit after successful approval
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        resetDeposit();
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + (deadlinePreset === "custom" && customDeadline 
+          ? Math.floor(new Date(customDeadline).getTime() / 1000) - Math.floor(Date.now() / 1000)
+          : (deadlinePreset === "1h" ? 60 * 60 : 
+             deadlinePreset === "24h" ? 24 * 60 * 60 : 
+             deadlinePreset === "7d" ? 7 * 24 * 60 * 60 : 30 * 24 * 60 * 60)));
+        
+        if (selectedTokenInfo && tokenAddress && contractAddress && isContractConfigured) {
+          const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
+          writeContract({
+            address: contractAddress,
+            abi: CLAIMABLE_ABI,
+            functionName: "depositToken",
+            args: [
+              recipient as `0x${string}`,
+              tokenAddress,
+              tokenAmount,
+              deadline,
+              title,
+            ],
+          });
+        }
+      }, 100);
     }
-  }, [isApprovalSuccess, refetchAllowance]);
+  }, [isApprovalSuccess, approvalStep, refetchAllowance, resetDeposit, writeContract, selectedTokenInfo, tokenAddress, contractAddress, isContractConfigured, amount, recipient, title, deadlinePreset, customDeadline]);
 
   // Reset approval step when token or amount changes
   useEffect(() => {
@@ -178,6 +213,8 @@ export function CreateDepositForm() {
     // #endregion
     if (!tokenAddress || !contractAddress || !isContractConfigured || !parsedAmount) return;
     
+    // Reset any previous errors before new approval
+    resetApproval();
     setApprovalStep("approving");
     // #region agent log
     fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:handleApprove:beforeWrite',message:'About to call writeApproval',data:{tokenAddress,contractAddress,parsedAmount:parsedAmount?.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3,H4'})}).catch(()=>{});
@@ -193,41 +230,89 @@ export function CreateDepositForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isValidRecipient || !isValidAmount || !isValidToken || !isTitleValid || !contractAddress || !isContractConfigured) return;
+    console.log("[handleSubmit] Called", {
+      isValidRecipient,
+      isValidAmount,
+      isValidToken,
+      isTitleValid,
+      contractAddress,
+      isContractConfigured,
+      selectedToken,
+      selectedTokenInfo,
+      tokenAddress,
+      isERC20,
+      needsApproval,
+      approvalStep,
+    });
+    
+    if (!isValidRecipient || !isValidAmount || !isValidToken || !isTitleValid || !contractAddress || !isContractConfigured) {
+      console.log("[handleSubmit] Validation failed, returning early");
+      return;
+    }
 
     // For ERC20 tokens, ensure approval is done first
-    if (isERC20 && needsApproval) {
+    // Skip if we just approved (approvalStep === "approved") even if needsApproval hasn't updated yet
+    if (isERC20 && needsApproval && approvalStep !== "approved") {
+      console.log("[handleSubmit] Needs approval, calling handleApprove");
       handleApprove();
       return;
     }
 
+    // Reset any previous deposit errors before new transaction
+    console.log("[handleSubmit] Resetting deposit and proceeding");
+    resetDeposit();
+
     const deadline = getDeadlineTimestamp();
 
     if (selectedToken === "ETH") {
-      writeContract({
-        address: contractAddress,
-        abi: CLAIMABLE_ABI,
-        functionName: "depositETH",
-        args: [recipient as `0x${string}`, deadline, title],
-        value: parseEther(amount),
-      });
+      console.log("[handleSubmit] Creating ETH deposit");
+      try {
+        writeContract({
+          address: contractAddress,
+          abi: CLAIMABLE_ABI,
+          functionName: "depositETH",
+          args: [recipient as `0x${string}`, deadline, title],
+          value: parseEther(amount),
+        });
+        console.log("[handleSubmit] writeContract (ETH) called successfully");
+      } catch (err) {
+        console.error("[handleSubmit] writeContract (ETH) threw an error:", err);
+      }
     } else {
-      if (!selectedTokenInfo || !tokenAddress) return;
+      if (!selectedTokenInfo || !tokenAddress) {
+        console.log("[handleSubmit] Missing selectedTokenInfo or tokenAddress, returning early", {
+          selectedTokenInfo,
+          tokenAddress,
+        });
+        return;
+      }
       
       const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
       
-      writeContract({
-        address: contractAddress,
-        abi: CLAIMABLE_ABI,
-        functionName: "depositToken",
-        args: [
-          recipient as `0x${string}`,
-          tokenAddress,
-          tokenAmount,
-          deadline,
-          title,
-        ],
+      console.log("[handleSubmit] Creating token deposit", {
+        contractAddress,
+        tokenAddress,
+        tokenAmount: tokenAmount.toString(),
+        deadline: deadline.toString(),
       });
+      
+      try {
+        writeContract({
+          address: contractAddress,
+          abi: CLAIMABLE_ABI,
+          functionName: "depositToken",
+          args: [
+            recipient as `0x${string}`,
+            tokenAddress,
+            tokenAmount,
+            deadline,
+            title,
+          ],
+        });
+        console.log("[handleSubmit] writeContract called successfully");
+      } catch (err) {
+        console.error("[handleSubmit] writeContract threw an error:", err);
+      }
     }
   };
 
@@ -561,7 +646,7 @@ export function CreateDepositForm() {
               </>
             ) : isSuccess ? (
               t("createAnother")
-            ) : isERC20 && needsApproval ? (
+            ) : isERC20 && needsApproval && approvalStep !== "approved" ? (
               <>
                 <ShieldCheck className="mr-2 h-4 w-4" />
                 Approve {amount} {selectedTokenInfo?.symbol || "Token"}
