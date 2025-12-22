@@ -1,18 +1,13 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, createConfig, http, cookieStorage, createStorage, State } from "wagmi";
+import { WagmiProvider, http, State } from "wagmi";
 import { arbitrum, arbitrumSepolia } from "wagmi/chains";
-import { RainbowKitProvider, darkTheme, connectorsForWallets } from "@rainbow-me/rainbowkit";
-import {
-  metaMaskWallet,
-  coinbaseWallet,
-  walletConnectWallet,
-  rainbowWallet,
-} from "@rainbow-me/rainbowkit/wallets";
+import { getDefaultConfig, RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChristmasBanner } from "./christmas-banner";
+import { mainnetConfig as ssrMainnetConfig } from "@/lib/wagmi";
 
 const TESTNET_STORAGE_KEY = "claimable-testnet-mode";
 
@@ -40,8 +35,13 @@ function getInitialTestnetMode(): boolean {
   return localStorage.getItem(TESTNET_STORAGE_KEY) === "true";
 }
 
-// Create configs with connectors (client-side only)
-function createWagmiConfigs() {
+// Singleton to store configs created on client-side
+let clientConfigs: { mainnetConfig: ReturnType<typeof getDefaultConfig>; testnetConfig: ReturnType<typeof getDefaultConfig> } | null = null;
+
+// Create configs with getDefaultConfig (client-side only)
+function getOrCreateWagmiConfigs() {
+  if (clientConfigs) return clientConfigs;
+
   const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo";
   const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 
@@ -53,46 +53,29 @@ function createWagmiConfigs() {
     ? `https://arb-sepolia.g.alchemy.com/v2/${alchemyKey}`
     : undefined;
 
-  const connectors = connectorsForWallets(
-    [
-      {
-        groupName: "Popular",
-        wallets: [metaMaskWallet, coinbaseWallet, walletConnectWallet, rainbowWallet],
-      },
-    ],
-    {
-      appName: "Claimable",
-      projectId,
-    }
-  );
-
-  const storage = createStorage({
-    storage: cookieStorage,
-    key: "claimable-wagmi",
-  });
-
-  const mainnetConfig = createConfig({
-    connectors,
+  const mainnetConfig = getDefaultConfig({
+    appName: "Lockd",
+    projectId,
     chains: [arbitrum],
     transports: {
       [arbitrum.id]: http(arbitrumRpc),
     },
     ssr: true,
-    storage,
   });
 
-  const testnetConfig = createConfig({
-    connectors,
+  const testnetConfig = getDefaultConfig({
+    appName: "Lockd",
+    projectId,
     chains: [arbitrum, arbitrumSepolia],
     transports: {
       [arbitrum.id]: http(arbitrumRpc),
       [arbitrumSepolia.id]: http(arbitrumSepoliaRpc),
     },
     ssr: true,
-    storage,
   });
 
-  return { mainnetConfig, testnetConfig };
+  clientConfigs = { mainnetConfig, testnetConfig };
+  return clientConfigs;
 }
 
 interface ProvidersProps {
@@ -114,17 +97,19 @@ export function Providers({ children, initialState }: ProvidersProps) {
 
   const [testnetEnabled, setTestnetEnabled] = useState(false);
   const [mounted, setMounted] = useState(false);
-
-  // Create configs once on client-side mount
-  const { mainnetConfig, testnetConfig } = useMemo(() => createWagmiConfigs(), []);
+  const configsRef = useRef<typeof clientConfigs>(null);
 
   useEffect(() => {
+    // Only create configs with connectors on client-side
+    configsRef.current = getOrCreateWagmiConfigs();
     setTestnetEnabled(getInitialTestnetMode());
     setMounted(true);
   }, []);
 
-  // Use mainnet config during SSR and initial render
-  const config = mounted && testnetEnabled ? testnetConfig : mainnetConfig;
+  // Use SSR-safe config during server rendering, then switch to full config on client
+  const config = mounted && configsRef.current
+    ? (testnetEnabled ? configsRef.current.testnetConfig : configsRef.current.mainnetConfig)
+    : ssrMainnetConfig;
 
   return (
     <WagmiProvider config={config} initialState={initialState}>
