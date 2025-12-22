@@ -1,12 +1,13 @@
 "use client";
 
 import { useChainId, useReadContract, useReadContracts } from "wagmi";
-import { formatEther } from "viem";
-import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, isValidContractAddress } from "@/lib/contracts";
+import { formatEther, formatUnits } from "viem";
+import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, isValidContractAddress, TOKENS } from "@/lib/contracts";
 import { Loader2, Layers, Lock, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { useEthPrice } from "@/lib/use-eth-price";
 
 interface Deposit {
   token: string;
@@ -16,16 +17,40 @@ interface Deposit {
 
 interface Stats {
   totalDeposits: number;
-  ethLocked: bigint;
-  ethClaimed: bigint;
+  usdLocked: number;
+  usdClaimed: number;
 }
 
 const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+// Stablecoin addresses (lowercase for comparison)
+const STABLECOIN_ADDRESSES: Record<number, Set<string>> = {
+  42161: new Set([
+    "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".toLowerCase(), // USDC
+    "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9".toLowerCase(), // USDT
+  ]),
+  421614: new Set([]),
+};
+
+// Get decimals for known tokens, returns null for unknown tokens
+function getKnownTokenDecimals(chainId: number, tokenAddress: string): number | null {
+  const tokens = TOKENS[chainId];
+  if (!tokens) return null;
+  
+  const normalizedAddress = tokenAddress.toLowerCase();
+  for (const token of Object.values(tokens)) {
+    if (token.address.toLowerCase() === normalizedAddress) {
+      return token.decimals;
+    }
+  }
+  return null;
+}
 
 export function StatsCards() {
   const chainId = useChainId();
   const contractAddress = CLAIMABLE_ADDRESSES[chainId];
   const t = useTranslations("stats");
+  const { ethPrice, isLoading: isLoadingPrice } = useEthPrice();
 
   const isContractConfigured = isValidContractAddress(contractAddress);
 
@@ -59,15 +84,15 @@ export function StatsCards() {
     },
   });
 
-  // Compute statistics
+  // Compute statistics in USD
   const stats: Stats = useMemo(() => {
     const defaultStats: Stats = {
       totalDeposits: 0,
-      ethLocked: BigInt(0),
-      ethClaimed: BigInt(0),
+      usdLocked: 0,
+      usdClaimed: 0,
     };
 
-    if (!depositsData) return defaultStats;
+    if (!depositsData || ethPrice === null) return defaultStats;
 
     const deposits: Deposit[] = depositsData
       .map((result) => {
@@ -80,25 +105,53 @@ export function StatsCards() {
       .filter((d): d is Deposit => d !== null);
 
     const totalDeposits = deposits.length;
+    let usdLocked = 0;
+    let usdClaimed = 0;
 
-    // Sum ETH amounts (only ETH deposits)
-    const ethDeposits = deposits.filter((d) => d.token === ETH_ADDRESS);
-    const ethLocked = ethDeposits
-      .filter((d) => !d.claimed)
-      .reduce((sum, d) => sum + d.amount, BigInt(0));
-    const ethClaimed = ethDeposits
-      .filter((d) => d.claimed)
-      .reduce((sum, d) => sum + d.amount, BigInt(0));
+    const stablecoins = STABLECOIN_ADDRESSES[chainId] || new Set();
 
-    return { totalDeposits, ethLocked, ethClaimed };
-  }, [depositsData]);
+    for (const deposit of deposits) {
+      const tokenLower = deposit.token.toLowerCase();
+      let usdValue = 0;
 
-  const isLoading = isLoadingCount || isLoadingDeposits;
+      if (deposit.token === ETH_ADDRESS) {
+        // ETH: convert to USD using price feed
+        const ethAmount = Number(formatEther(deposit.amount));
+        usdValue = ethAmount * ethPrice;
+      } else if (stablecoins.has(tokenLower)) {
+        // Stablecoins (USDC, USDT): 1:1 with USD
+        const decimals = getKnownTokenDecimals(chainId, deposit.token) ?? 6;
+        usdValue = Number(formatUnits(deposit.amount, decimals));
+      } else {
+        // Other ERC20 tokens: try to get decimals, but skip USD conversion (we don't have price)
+        // For now, we'll skip unknown tokens in USD calculation
+        // Could be extended with more price feeds in the future
+        continue;
+      }
+
+      if (deposit.claimed) {
+        usdClaimed += usdValue;
+      } else {
+        usdLocked += usdValue;
+      }
+    }
+
+    return { totalDeposits, usdLocked, usdClaimed };
+  }, [depositsData, ethPrice, chainId]);
+
+  const isLoading = isLoadingCount || isLoadingDeposits || isLoadingPrice;
 
   // Don't render anything if contract is not configured
   if (!isContractConfigured) {
     return null;
   }
+
+  const formatUsd = (value: number) => {
+    if (value >= 1000) {
+      return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+    }
+    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   const statItems = [
     {
@@ -108,12 +161,12 @@ export function StatsCards() {
     },
     {
       label: t("valueLocked"),
-      value: isLoading ? null : `${Number(formatEther(stats.ethLocked)).toFixed(4)} ETH`,
+      value: isLoading ? null : formatUsd(stats.usdLocked),
       icon: Lock,
     },
     {
       label: t("valueClaimed"),
-      value: isLoading ? null : `${Number(formatEther(stats.ethClaimed)).toFixed(4)} ETH`,
+      value: isLoading ? null : formatUsd(stats.usdClaimed),
       icon: CheckCircle,
     },
   ];
@@ -146,4 +199,6 @@ export function StatsCards() {
     </div>
   );
 }
+
+
 

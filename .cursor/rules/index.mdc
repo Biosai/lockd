@@ -1,0 +1,80 @@
+---
+description: Root project rules for Lockd - Exclusive Claim monorepo
+globs: ["**/*"]
+---
+
+# Lockd Project Guidelines
+
+This is a monorepo containing smart contracts and a web application for a trustless crypto escrow system.
+
+## Project Structure
+
+```
+/
+├── contracts/         # Solidity smart contracts (Hardhat)
+├── apps/web/          # Next.js web application
+├── artifacts/         # Compiled contract artifacts
+├── typechain-types/   # TypeScript types generated from contracts
+├── test/              # Smart contract tests
+└── scripts/           # Deployment scripts
+```
+
+## Technology Stack
+
+- **Smart Contracts**: Solidity ^0.8.24, Hardhat, OpenZeppelin
+- **Web App**: Next.js 16, React 18, TypeScript, Tailwind CSS, wagmi, RainbowKit
+- **Testing**: Hardhat (Mocha/Chai) for contracts, 100% coverage required
+- **Package Manager**: npm with workspaces
+
+## General Conventions
+
+### Code Style
+
+- Use TypeScript for all non-Solidity code
+- Follow existing code patterns and conventions in each subdirectory
+- Use descriptive variable and function names
+- Add JSDoc/NatSpec comments for public functions and complex logic
+
+### Git Workflow
+
+- Write clear, descriptive commit messages
+- Keep commits atomic and focused
+- Reference issues in commits when applicable
+
+### Security
+
+- Never commit private keys, API keys, or secrets
+- Use environment variables for sensitive configuration
+- Follow security best practices for both contracts and web app
+- All smart contract changes require comprehensive test coverage
+
+### Dependencies
+
+- Prefer established, audited libraries (OpenZeppelin for contracts)
+- Keep dependencies up to date
+- Minimize external dependencies when possible
+
+## Running the Project
+
+```bash
+# Install dependencies
+npm install
+
+# Compile contracts
+npm run compile
+
+# Run contract tests
+npm run test
+
+# Start web app development server
+npm run dev
+
+# Build web app
+npm run build
+```
+
+## Deployment
+
+- Always test on testnet (Arbitrum Sepolia) before mainnet
+- Verify contracts on block explorers after deployment
+- Update `deployments.json` after successful deployments

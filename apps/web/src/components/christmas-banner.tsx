@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Gift, Sparkles } from "lucide-react";
 
 // Martin's wallet address
+//const MARTIN_ADDRESS = "0x30Cab946134F09Ad2DeF333e19057751B3A74277"//
 const MARTIN_ADDRESS = "0x11B7fdd4c2c51008906fb9a6433De51821eB0079";
 
 const STORAGE_KEY = "christmas-banner-dismissed";
@@ -39,13 +40,13 @@ export function ChristmasBanner() {
     <AnimatePresence>
       {shouldShow && (
         <motion.div
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed top-0 left-0 right-0 z-[100]"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="overflow-hidden"
         >
-          <div className="relative overflow-hidden bg-gradient-to-r from-red-600 via-red-500 to-green-600 px-4 py-4 shadow-lg">
+          <div className="relative overflow-hidden bg-gradient-to-r from-red-600 via-red-500 to-green-600 px-4 py-3 shadow-lg">
             {/* Decorative sparkles */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <motion.div
@@ -104,7 +105,7 @@ export function ChristmasBanner() {
                   ease: "easeInOut",
                 }}
               >
-                <Gift className="h-8 w-8 text-yellow-200 flex-shrink-0" />
+                <Gift className="h-7 w-7 text-yellow-200 flex-shrink-0" />
               </motion.div>
               
               <p className="text-white font-medium text-sm md:text-base">
@@ -119,7 +120,7 @@ export function ChristmasBanner() {
 
               <button
                 onClick={handleDismiss}
-                className="flex-shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"
+                className="flex-shrink-0 p-1.5 rounded-full hover:bg-white/20 transition-colors"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5 text-white" />
@@ -131,4 +132,3 @@ export function ChristmasBanner() {
     </AnimatePresence>
   );
 }
-

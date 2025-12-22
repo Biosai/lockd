@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt, useReadContracts, useReadContract } from "wagmi";
 import { parseEther, parseUnits, isAddress, type Address } from "viem";
 import { Button } from "@/components/ui/button";
@@ -54,12 +54,18 @@ export function CreateDepositForm() {
   const [approvalStep, setApprovalStep] = useState<ApprovalStep>("idle");
   
   // Deposit transaction
-  const { writeContractAsync, data: hash, isPending, error, reset: resetDeposit } = useWriteContract();
+  const { 
+    writeContract, 
+    data: hash, 
+    isPending, 
+    error, 
+    reset: resetDeposit 
+  } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   // Approval transaction (separate from deposit)
   const { 
-    writeContractAsync: writeApprovalAsync, 
+    writeContract: writeApproval, 
     data: approvalHash, 
     isPending: isApprovalPending, 
     error: approvalError,
@@ -159,7 +165,7 @@ export function CreateDepositForm() {
       
       // Auto-trigger deposit after successful approval
       // Small delay to ensure state is updated
-      setTimeout(async () => {
+      setTimeout(() => {
         const deadline = BigInt(Math.floor(Date.now() / 1000) + (deadlinePreset === "custom" && customDeadline 
           ? Math.floor(new Date(customDeadline).getTime() / 1000) - Math.floor(Date.now() / 1000)
           : (deadlinePreset === "1h" ? 60 * 60 : 
@@ -168,38 +174,29 @@ export function CreateDepositForm() {
         
         if (selectedTokenInfo && tokenAddress && contractAddress && isContractConfigured) {
           const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
-          try {
-            await writeContractAsync({
-              address: contractAddress,
-              abi: CLAIMABLE_ABI,
-              functionName: "depositToken",
-              args: [
-                recipient as `0x${string}`,
-                tokenAddress,
-                tokenAmount,
-                deadline,
-                title,
-              ],
-              chainId,
-            });
-          } catch (err) {
-            console.error("[auto-deposit] Error:", err);
-          }
+          console.log("[auto-deposit] Triggering deposit after approval");
+          
+          writeContract({
+            address: contractAddress,
+            abi: CLAIMABLE_ABI,
+            functionName: "depositToken",
+            args: [
+              recipient as `0x${string}`,
+              tokenAddress,
+              tokenAmount,
+              deadline,
+              title,
+            ],
+          });
         }
       }, 100);
     }
-  }, [isApprovalSuccess, approvalStep, refetchAllowance, writeContractAsync, selectedTokenInfo, tokenAddress, contractAddress, isContractConfigured, amount, recipient, title, deadlinePreset, customDeadline, chainId]);
+  }, [isApprovalSuccess, approvalStep, refetchAllowance, writeContract, selectedTokenInfo, tokenAddress, contractAddress, isContractConfigured, amount, recipient, title, deadlinePreset, customDeadline]);
 
   // Reset approval step when token or amount changes
   useEffect(() => {
     setApprovalStep("idle");
   }, [selectedToken, customTokenAddress, amount]);
-
-  // Clear errors when user changes form inputs (separate effect to avoid dependency issues)
-  const clearErrors = useCallback(() => {
-    resetDeposit();
-    resetApproval();
-  }, [resetDeposit, resetApproval]);
 
   const isValidRecipient = recipient && isAddress(recipient);
   const isValidAmount = amount && parseFloat(amount) > 0;
@@ -217,33 +214,24 @@ export function CreateDepositForm() {
   };
 
   // Handle ERC20 approval - approve exact amount for security
-  const handleApprove = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:handleApprove',message:'handleApprove called',data:{tokenAddress,contractAddress,isContractConfigured,parsedAmount:parsedAmount?.toString(),chainId,selectedToken,customTokenAddress},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3,H4,H5'})}).catch(()=>{});
-    // #endregion
-    if (!tokenAddress || !contractAddress || !isContractConfigured || !parsedAmount) return;
-    
-    // Reset any previous errors before new approval
-    resetApproval();
-    setApprovalStep("approving");
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/d1f8b6fa-85d6-4239-9cb9-1cc1be74d3fe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'create-deposit-form.tsx:handleApprove:beforeWrite',message:'About to call writeApproval',data:{tokenAddress,contractAddress,parsedAmount:parsedAmount?.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3,H4'})}).catch(()=>{});
-    // #endregion
-    try {
-      await writeApprovalAsync({
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [contractAddress, parsedAmount],
-        chainId,
-      });
-    } catch (err) {
-      console.error("[handleApprove] writeApprovalAsync error:", err);
-      setApprovalStep("idle");
+  const handleApprove = () => {
+    if (!tokenAddress || !contractAddress || !isContractConfigured || !parsedAmount) {
+      console.log("[handleApprove] Missing required params");
+      return;
     }
+    
+    setApprovalStep("approving");
+    console.log("[handleApprove] Calling writeApproval");
+    
+    writeApproval({
+      address: tokenAddress,
+      abi: ERC20_ABI,
+      functionName: "approve",
+      args: [contractAddress, parsedAmount],
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log("[handleSubmit] Called", {
@@ -275,30 +263,20 @@ export function CreateDepositForm() {
     }
 
     console.log("[handleSubmit] Proceeding to deposit");
-
     const deadline = getDeadlineTimestamp();
 
     if (selectedToken === "ETH") {
       console.log("[handleSubmit] Creating ETH deposit");
-      try {
-        const txHash = await writeContractAsync({
-          address: contractAddress,
-          abi: CLAIMABLE_ABI,
-          functionName: "depositETH",
-          args: [recipient as `0x${string}`, deadline, title],
-          value: parseEther(amount),
-          chainId,
-        });
-        console.log("[handleSubmit] ETH deposit tx hash:", txHash);
-      } catch (err) {
-        console.error("[handleSubmit] ETH deposit error:", err);
-      }
+      writeContract({
+        address: contractAddress,
+        abi: CLAIMABLE_ABI,
+        functionName: "depositETH",
+        args: [recipient as `0x${string}`, deadline, title],
+        value: parseEther(amount),
+      });
     } else {
       if (!selectedTokenInfo || !tokenAddress) {
-        console.log("[handleSubmit] Missing selectedTokenInfo or tokenAddress, returning early", {
-          selectedTokenInfo,
-          tokenAddress,
-        });
+        console.log("[handleSubmit] Missing selectedTokenInfo or tokenAddress, returning early");
         return;
       }
       
@@ -311,24 +289,18 @@ export function CreateDepositForm() {
         deadline: deadline.toString(),
       });
       
-      try {
-        const txHash = await writeContractAsync({
-          address: contractAddress,
-          abi: CLAIMABLE_ABI,
-          functionName: "depositToken",
-          args: [
-            recipient as `0x${string}`,
-            tokenAddress,
-            tokenAmount,
-            deadline,
-            title,
-          ],
-          chainId,
-        });
-        console.log("[handleSubmit] Token deposit tx hash:", txHash);
-      } catch (err) {
-        console.error("[handleSubmit] Token deposit error:", err);
-      }
+      writeContract({
+        address: contractAddress,
+        abi: CLAIMABLE_ABI,
+        functionName: "depositToken",
+        args: [
+          recipient as `0x${string}`,
+          tokenAddress,
+          tokenAmount,
+          deadline,
+          title,
+        ],
+      });
     }
   };
 

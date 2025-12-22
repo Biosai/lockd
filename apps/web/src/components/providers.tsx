@@ -6,7 +6,6 @@ import { arbitrum, arbitrumSepolia } from "wagmi/chains";
 import { getDefaultConfig, RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
 import { useState, useEffect, useRef } from "react";
-import { ChristmasBanner } from "./christmas-banner";
 import { mainnetConfig as ssrMainnetConfig } from "@/lib/wagmi";
 
 const TESTNET_STORAGE_KEY = "claimable-testnet-mode";
@@ -122,7 +121,6 @@ export function Providers({ children, initialState }: ProvidersProps) {
             fontStack: "system",
           })}
         >
-          <ChristmasBanner />
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>

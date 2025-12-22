@@ -6,6 +6,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ChristmasBanner } from "@/components/christmas-banner";
 import { Menu, X } from "lucide-react";
 
 function GithubIcon({ className }: { className?: string }) {
@@ -48,7 +49,9 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[100] border-b border-border/40 bg-background/80 backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-[100]">
+      <ChristmasBanner />
+      <div className="border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/">
@@ -220,6 +223,7 @@ export function Header() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </header>
   );
 }

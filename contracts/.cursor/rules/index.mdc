@@ -1,0 +1,229 @@
+---
+description: Smart contract development rules - Solidity and Hardhat
+globs: ["contracts/**/*.sol", "test/**/*.ts", "scripts/**/*.ts", "hardhat.config.ts"]
+---
+
+# Smart Contract Development Guidelines
+
+## Technology Stack
+
+- **Language**: Solidity ^0.8.24
+- **Framework**: Hardhat
+- **Libraries**: OpenZeppelin Contracts v5
+- **Testing**: Mocha, Chai, hardhat-network-helpers
+- **Types**: TypeChain for TypeScript bindings
+
+## Code Quality Requirements
+
+### 100% Test Coverage - MANDATORY
+
+Every smart contract MUST have 100% test coverage. No exceptions.
+
+```bash
+# Run tests with coverage
+npx hardhat coverage
+```
+
+Coverage requirements:
+- **Statements**: 100%
+- **Branches**: 100%
+- **Functions**: 100%
+- **Lines**: 100%
+
+### Test Organization
+
+Structure tests following the existing pattern:
+
+```typescript
+describe("ContractName", function () {
+  // Setup
+  let contract: ContractType;
+  let user1: HardhatEthersSigner;
+  
+  beforeEach(async function () {
+    // Deploy fresh instances for each test
+  });
+
+  describe("functionName", function () {
+    it("should do expected behavior", async function () {
+      // Test happy path
+    });
+
+    it("should revert when condition fails", async function () {
+      // Test error conditions
+    });
+  });
+});
+```
+
+### Test Categories to Cover
+
+1. **Happy paths**: Normal successful operations
+2. **Edge cases**: Boundary values, empty inputs, max values
+3. **Access control**: Unauthorized access attempts
+4. **State changes**: Verify all state mutations
+5. **Events**: Verify correct event emissions with parameters
+6. **Reverts**: Test all custom errors and require conditions
+7. **Reentrancy**: If applicable, test reentrancy scenarios
+8. **Time-dependent**: Use `time.increase()` for deadline tests
+
+## Solidity Conventions
+
+### File Structure
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+// 1. Imports (OpenZeppelin first, then local)
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IMyInterface.sol";
+
+// 2. Contract documentation
+/**
+ * @title ContractName
+ * @notice Brief description of what the contract does
+ * @dev Implementation details if needed
+ */
+contract ContractName is ReentrancyGuard {
+    // 3. Type declarations (structs, enums)
+    
+    // 4. State variables
+    
+    // 5. Events
+    
+    // 6. Errors (custom errors preferred over require strings)
+    
+    // 7. Modifiers
+    
+    // 8. Constructor
+    
+    // 9. External functions
+    
+    // 10. Public functions
+    
+    // 11. Internal functions
+    
+    // 12. Private functions
+    
+    // 13. View/Pure functions
+}
+```
+
+### Naming Conventions
+
+- **Contracts**: PascalCase (`ExclusiveClaim`)
+- **Functions**: camelCase (`depositETH`)
+- **Constants**: SCREAMING_SNAKE_CASE (`MAX_TITLE_LENGTH`)
+- **State variables**: camelCase (`depositCount`)
+- **Events**: PascalCase (`DepositCreated`)
+- **Custom errors**: PascalCase (`ZeroAmount`)
+- **Parameters**: camelCase with underscore prefix for storage conflicts (`_amount`)
+
+### Security Best Practices
+
+1. **Use Custom Errors** instead of require strings (gas efficient)
+   ```solidity
+   error ZeroAmount();
+   if (amount == 0) revert ZeroAmount();
+   ```
+
+2. **Follow Checks-Effects-Interactions Pattern**
+   ```solidity
+   function withdraw() external {
+       // Checks
+       if (balances[msg.sender] == 0) revert ZeroBalance();
+       
+       // Effects
+       uint256 amount = balances[msg.sender];
+       balances[msg.sender] = 0;
+       
+       // Interactions
+       (bool success, ) = msg.sender.call{value: amount}("");
+       require(success, "Transfer failed");
+   }
+   ```
+
+3. **Use ReentrancyGuard** for functions with external calls
+4. **Use SafeERC20** for token transfers
+5. **Validate all inputs** at function entry
+6. **Use `nonReentrant` modifier** on state-changing functions with external calls
+
+### Gas Optimization
+
+- Use `calldata` for read-only array/struct parameters
+- Use `storage` pointer for multiple reads from same struct
+- Cache array length in loops
+- Use `++i` instead of `i++`
+- Pack struct variables to minimize storage slots
+
+### Documentation (NatSpec)
+
+Every public/external function must have NatSpec:
+
+```solidity
+/**
+ * @notice Creates a new ETH deposit for a specific claimant
+ * @param claimant The address that can claim this deposit
+ * @param deadline The timestamp after which depositor can refund
+ * @param title Optional description for the deposit
+ * @return depositId The ID of the newly created deposit
+ */
+function depositETH(
+    address claimant,
+    uint256 deadline,
+    string calldata title
+) external payable returns (uint256 depositId);
+```
+
+## Deployment Checklist
+
+1. [ ] All tests passing with 100% coverage
+2. [ ] Contract verified on testnet
+3. [ ] Manual testing on testnet completed
+4. [ ] Gas usage reviewed and optimized
+5. [ ] Security considerations documented
+6. [ ] Deployment parameters double-checked
+7. [ ] Verify contract on block explorer after deployment
+
+## Common Test Utilities
+
+```typescript
+import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
+// Time manipulation
+await time.increase(ONE_DAY);
+await time.increaseTo(specificTimestamp);
+const latest = await time.latest();
+
+// Event testing
+await expect(tx)
+  .to.emit(contract, "EventName")
+  .withArgs(arg1, arg2);
+
+// Revert testing with custom errors
+await expect(tx)
+  .to.be.revertedWithCustomError(contract, "ErrorName");
+
+// Balance changes
+await expect(tx).to.changeEtherBalance(account, amount);
+await expect(tx).to.changeTokenBalance(token, account, amount);
+```
+
+## File Organization
+
+```
+contracts/
+├── ExclusiveClaim.sol     # Main contract
+├── interfaces/            # Interface definitions
+└── test/                  # Mock contracts for testing
+    └── MockERC20.sol
+
+test/
+└── ExclusiveClaim.test.ts # Tests mirror contract structure
+
+scripts/
+└── deploy.ts              # Deployment scripts
+```

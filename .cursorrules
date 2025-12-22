@@ -1,0 +1,84 @@
+# Lockd - Exclusive Claim Project Rules
+
+## Project Overview
+
+Lockd is a trustless crypto escrow system allowing users to deposit ETH or ERC20 tokens for specific recipients. The recipient can claim at any time; after a deadline, the depositor can refund.
+
+## Architecture
+
+- **Monorepo** using npm workspaces
+- **Smart Contracts**: `contracts/` - Solidity ^0.8.24 with Hardhat
+- **Web App**: `apps/web/` - Next.js 16 with React 18, wagmi, RainbowKit
+
+## Critical Requirements
+
+### Smart Contracts - 100% Test Coverage MANDATORY
+
+Every line, branch, statement, and function in smart contracts MUST be tested. Run `npx hardhat coverage` to verify.
+
+Test requirements:
+- All happy paths
+- All error conditions (custom errors)
+- All edge cases (zero values, max values, boundaries)
+- All access control checks
+- All event emissions
+- Time-dependent logic (use hardhat-network-helpers)
+
+### Security First
+
+- Use OpenZeppelin contracts for standard functionality
+- Follow Checks-Effects-Interactions pattern
+- Use ReentrancyGuard for state-changing external calls
+- Use SafeERC20 for token transfers
+- Custom errors over require strings
+
+### Web3 Best Practices
+
+- Always verify contract is deployed on current chain before interactions
+- Sanitize blockchain errors before showing to users
+- Handle wallet disconnection gracefully
+- Support multiple chains (mainnet + testnets)
+
+## Code Style
+
+### Solidity
+- Custom errors: `error ErrorName();`
+- Events: `event EventName(type indexed param);`
+- NatSpec for all public functions
+- Organize: imports → types → state → events → errors → modifiers → functions
+
+### TypeScript
+- Strict mode enabled
+- Explicit return types for functions
+- Use `const` by default
+- Destructure props in components
+
+### React/Next.js
+- Server Components by default, `"use client"` only when needed
+- Colocate related code (component + types + utils)
+- Use next-intl for all user-facing strings
+- Tailwind CSS for styling, CSS variables for theming
+
+## File Naming
+
+- Solidity: PascalCase (`ExclusiveClaim.sol`)
+- TypeScript/React: kebab-case (`create-deposit-form.tsx`)
+- Test files: `*.test.ts` (contracts), `*.test.tsx` (components)
+
+## Commands
+
+```bash
+npm run compile    # Compile contracts
+npm run test       # Run contract tests
+npm run dev        # Start web app dev server
+npm run build      # Build web app
+```
+
+## Supported Networks
+
+- Arbitrum (mainnet)
+- Arbitrum Sepolia (testnet)
+- Base, Optimism, Polygon (configured but verify deployment)
+
+
+
