@@ -315,7 +315,56 @@ export function DepositCard({ deposit, type }: DepositCardProps) {
       {error && (
         <div className="mt-4 flex items-center gap-2 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
-          <span>Error: {error.message}</span>
+          <span>
+            {/* Sanitize error messages - don't expose raw blockchain errors */}
+            {(() => {
+              const msg = error.message?.toLowerCase() || "";
+              // User rejected the transaction
+              if (msg.includes("user rejected") || msg.includes("user denied")) {
+                return "Transaction was rejected by user";
+              }
+              // Insufficient balance
+              if (msg.includes("insufficient")) {
+                return "Insufficient balance for this transaction";
+              }
+              // Gas estimation failed - usually means the transaction would revert
+              if (msg.includes("gas") || msg.includes("fee") || msg.includes("exceeds") || msg.includes("intrinsic")) {
+                return "Transaction would fail. Please check that the deadline has passed and the deposit hasn't been claimed.";
+              }
+              // Contract reverts
+              if (msg.includes("deadline") || msg.includes("DeadlineNotReached")) {
+                return "Cannot refund yet - deadline has not been reached";
+              }
+              if (msg.includes("claimed") || msg.includes("AlreadyClaimed")) {
+                return "This deposit has already been claimed or refunded";
+              }
+              if (msg.includes("NotDepositor") || msg.includes("not depositor")) {
+                return "Only the original depositor can request a refund";
+              }
+              if (msg.includes("NotClaimant") || msg.includes("not claimant")) {
+                return "Only the designated recipient can claim this deposit";
+              }
+              // Ledger-specific errors
+              if (msg.includes("0x6b0c") || msg.includes("0x6700") || msg.includes("no app") || msg.includes("device is locked") || msg.includes("locked device")) {
+                return "Ledger: Please unlock your device and open the Ethereum app";
+              }
+              if (msg.includes("disconnected") || msg.includes("transport") || msg.includes("hid") || msg.includes("cannot open")) {
+                return "Ledger: Device disconnected. Please reconnect your Ledger and open the Ethereum app";
+              }
+              if (msg.includes("0x6985") || msg.includes("condition not satisfied")) {
+                return "Ledger: Transaction rejected on device";
+              }
+              if (msg.includes("blind signing") || msg.includes("enable contract data") || msg.includes("contract data")) {
+                return "Ledger: Please enable 'Blind signing' in the Ethereum app settings";
+              }
+              // Execution reverted without specific error
+              if (msg.includes("execution reverted") || msg.includes("revert")) {
+                return "Transaction failed. Please verify the deadline has passed and the deposit is still available.";
+              }
+              // Generic fallback
+              return "Transaction failed. Please try again.";
+            })()}
+          </span>
         </div>
       )}
 
