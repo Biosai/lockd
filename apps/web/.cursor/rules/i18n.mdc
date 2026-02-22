@@ -1,0 +1,66 @@
+---
+description: Internationalization rules and translation file conventions
+globs: ["apps/web/messages/**/*", "apps/web/src/i18n/**/*"]
+---
+
+# Internationalization Rules
+
+## Every User-Facing String Goes Through next-intl
+
+No hardcoded text in components. Ever. Non-negotiable.
+
+```tsx
+import { useTranslations } from "next-intl";
+
+function Component() {
+  const translations = useTranslations("namespace");
+
+  return <p>{translations("key")}</p>;
+  // With interpolation
+  return <p>{translations("greeting", { name: "John" })}</p>;
+}
+```
+
+## Adding New Strings
+
+1. Add the key to BOTH `messages/en.json` AND `messages/fr.json`
+2. Use descriptive, namespaced keys: `createDeposit.recipientLabel`, not `label1`
+3. Keep translations organized by page/feature namespace
+4. Use interpolation for dynamic content: `"greeting": "Hello, {name}!"`
+
+## Translation File Structure
+
+```json
+{
+  "namespace": {
+    "key": "Translation value",
+    "greeting": "Hello, {name}!"
+  }
+}
+```
+
+## Current Namespaces
+
+| Namespace | Purpose |
+|-----------|---------|
+| `metadata` | Page title, description, OG tags |
+| `header` / `footer` | Navigation and layout |
+| `home` | Landing page content |
+| `howItWorks` | How it works section |
+| `features` | Features grid |
+| `useCases` | Use cases section |
+| `cta` | Call to action |
+| `app` | Dashboard |
+| `createDeposit` | Deposit form |
+| `sentDeposits` / `receivedDeposits` | Deposit lists |
+| `claimPage` | Claim page |
+| `certify` | File certification |
+| `stats` | Statistics cards |
+| `common` | Shared strings |
+
+## Supported Locales
+
+- `en` — English (primary)
+- `fr` — French
+
+Locale is stored in cookies and detected from `Accept-Language` header as fallback.

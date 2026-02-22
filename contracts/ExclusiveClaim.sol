@@ -19,6 +19,7 @@ contract ExclusiveClaim is ReentrancyGuard {
         address claimant;       // The address that can claim the deposit
         address token;          // Token address (address(0) for ETH)
         uint256 amount;         // Amount deposited
+        uint256 startTime;      // Timestamp from which claimant can claim (0 = immediate)
         uint256 deadline;       // Timestamp after which depositor can also withdraw
         bool claimed;           // Whether the deposit has been claimed/refunded
         string title;           // Optional title/label for the deposit
@@ -37,6 +38,7 @@ contract ExclusiveClaim is ReentrancyGuard {
         address indexed claimant,
         address token,
         uint256 amount,
+        uint256 startTime,
         uint256 deadline,
         string title
     );
@@ -77,24 +79,33 @@ contract ExclusiveClaim is ReentrancyGuard {
     /// @notice Error thrown when title exceeds maximum length
     error TitleTooLong();
 
+    /// @notice Error thrown when startTime is after deadline
+    error StartTimeAfterDeadline();
+
+    /// @notice Error thrown when trying to claim before startTime
+    error ClaimNotYetAllowed();
+
     /// @notice Maximum allowed length for deposit title (in bytes)
     uint256 public constant MAX_TITLE_LENGTH = 128;
 
     /**
      * @notice Create a new deposit for ETH
      * @param claimant The address that can claim this deposit
+     * @param startTime Timestamp from which claimant can claim (0 for immediate)
      * @param deadline The timestamp after which the depositor can also withdraw
      * @param title Optional title/label for the deposit
      * @return depositId The ID of the newly created deposit
      */
     function depositETH(
         address claimant,
+        uint256 startTime,
         uint256 deadline,
         string calldata title
     ) external payable nonReentrant returns (uint256 depositId) {
         if (msg.value == 0) revert ZeroAmount();
         if (claimant == address(0)) revert ZeroClaimant();
         if (deadline <= block.timestamp) revert DeadlineNotInFuture();
+        if (startTime > deadline) revert StartTimeAfterDeadline();
         if (bytes(title).length > MAX_TITLE_LENGTH) revert TitleTooLong();
 
         depositId = depositCount++;
@@ -104,12 +115,13 @@ contract ExclusiveClaim is ReentrancyGuard {
             claimant: claimant,
             token: address(0),
             amount: msg.value,
+            startTime: startTime,
             deadline: deadline,
             claimed: false,
             title: title
         });
 
-        emit DepositCreated(depositId, msg.sender, claimant, address(0), msg.value, deadline, title);
+        emit DepositCreated(depositId, msg.sender, claimant, address(0), msg.value, startTime, deadline, title);
     }
 
     /**
@@ -118,6 +130,7 @@ contract ExclusiveClaim is ReentrancyGuard {
      * @param claimant The address that can claim this deposit
      * @param token The ERC20 token address
      * @param amount The amount of tokens to deposit (may differ from actual if fee-on-transfer)
+     * @param startTime Timestamp from which claimant can claim (0 for immediate)
      * @param deadline The timestamp after which the depositor can also withdraw
      * @param title Optional title/label for the deposit
      * @return depositId The ID of the newly created deposit
@@ -126,6 +139,7 @@ contract ExclusiveClaim is ReentrancyGuard {
         address claimant,
         address token,
         uint256 amount,
+        uint256 startTime,
         uint256 deadline,
         string calldata title
     ) external nonReentrant returns (uint256 depositId) {
@@ -133,6 +147,7 @@ contract ExclusiveClaim is ReentrancyGuard {
         if (claimant == address(0)) revert ZeroClaimant();
         if (token == address(0)) revert InvalidETHAmount();
         if (deadline <= block.timestamp) revert DeadlineNotInFuture();
+        if (startTime > deadline) revert StartTimeAfterDeadline();
         if (bytes(title).length > MAX_TITLE_LENGTH) revert TitleTooLong();
 
         // Record balance before transfer to handle fee-on-transfer tokens
@@ -154,12 +169,13 @@ contract ExclusiveClaim is ReentrancyGuard {
             claimant: claimant,
             token: token,
             amount: actualAmount, // Store actual amount received, not requested amount
+            startTime: startTime,
             deadline: deadline,
             claimed: false,
             title: title
         });
 
-        emit DepositCreated(depositId, msg.sender, claimant, token, actualAmount, deadline, title);
+        emit DepositCreated(depositId, msg.sender, claimant, token, actualAmount, startTime, deadline, title);
     }
 
     /**
@@ -173,6 +189,7 @@ contract ExclusiveClaim is ReentrancyGuard {
         
         if (d.claimed) revert AlreadyClaimed();
         if (msg.sender != d.claimant) revert NotClaimant();
+        if (d.startTime > 0 && block.timestamp < d.startTime) revert ClaimNotYetAllowed();
 
         d.claimed = true;
 
@@ -208,6 +225,7 @@ contract ExclusiveClaim is ReentrancyGuard {
      * @return claimant The address that can claim
      * @return token The token address (address(0) for ETH)
      * @return amount The deposit amount
+     * @return startTime The timestamp from which claiming is allowed
      * @return deadline The claim deadline
      * @return claimed Whether already claimed/refunded
      * @return title The deposit title/label
@@ -217,13 +235,14 @@ contract ExclusiveClaim is ReentrancyGuard {
         address claimant,
         address token,
         uint256 amount,
+        uint256 startTime,
         uint256 deadline,
         bool claimed,
         string memory title
     ) {
         if (depositId >= depositCount) revert DepositNotFound();
         Deposit storage d = deposits[depositId];
-        return (d.depositor, d.claimant, d.token, d.amount, d.deadline, d.claimed, d.title);
+        return (d.depositor, d.claimant, d.token, d.amount, d.startTime, d.deadline, d.claimed, d.title);
     }
 
     /**

@@ -13,21 +13,21 @@
     "lint": "npm run lint --workspace=apps/web",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage",
+    "audit": "npm run audit:solhint && echo '\\n=== Run npm run audit:slither for full security analysis (requires Python) ==='",
+    "audit:solhint": "npx solhint 'contracts/**/*.sol' -f stylish",
+    "audit:slither": "slither contracts/ --config-file slither.config.json --json reports/slither-report.json 2>&1 | tee reports/slither-output.txt; slither contracts/ --config-file slither.config.json --print human-summary 2>&1 | tee reports/audit-summary.txt",
+    "audit:slither-sarif": "slither contracts/ --config-file slither.config.json --sarif reports/slither-report.sarif",
     "deploy:arbitrum": "npx hardhat run scripts/deploy.ts --network arbitrum",
-    "deploy:arbitrum-sepolia": "npx hardhat run scripts/deploy.ts --network arbitrumSepolia",
-    "deploy:mainnet": "npx hardhat run scripts/deploy.ts --network mainnet",
-    "deploy:sepolia": "npx hardhat run scripts/deploy.ts --network sepolia",
-    "deploy:base": "npx hardhat run scripts/deploy.ts --network base",
-    "deploy:base-sepolia": "npx hardhat run scripts/deploy.ts --network baseSepolia",
-    "deploy:optimism": "npx hardhat run scripts/deploy.ts --network optimism",
-    "deploy:polygon": "npx hardhat run scripts/deploy.ts --network polygon"
+    "deploy:arbitrum-sepolia": "npx hardhat run scripts/deploy.ts --network arbitrumSepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ledger": "^1.2.2",
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
     "@openzeppelin/contracts": "^5.4.0",
-    "dotenv": "^16.6.1",
-    "hardhat": "^2.28.0"
+    "dotenv": "^17.2.3",
+    "hardhat": "^2.28.0",
+    "solhint": "^6.0.3"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,0 +1,99 @@
+---
+description: Smart contract testing requirements, patterns, and utilities
+globs: ["test/**/*.ts"]
+---
+
+# Smart Contract Testing Rules
+
+## The Iron Rule: 100% Coverage
+
+Every contract MUST have 100% test coverage. No exceptions.
+
+```bash
+npx hardhat coverage
+```
+
+- **Statements**: 100%
+- **Branches**: 100%
+- **Functions**: 100%
+- **Lines**: 100%
+
+If a new function is added without tests, it's blocked. If a branch is untested, it's blocked.
+
+## Test Organization
+
+```typescript
+describe("ContractName", function () {
+  let contract: ContractType;
+  let deployer: HardhatEthersSigner;
+  let user: HardhatEthersSigner;
+
+  beforeEach(async function () {
+    // Deploy fresh instances for EVERY test — no shared state
+  });
+
+  describe("functionName", function () {
+    it("should do expected behavior", async function () {
+      // Happy path
+    });
+
+    it("should revert when condition fails", async function () {
+      // Error path — test the exact custom error
+    });
+
+    it("should emit EventName with correct parameters", async function () {
+      // Event verification
+    });
+  });
+});
+```
+
+## Test Categories — ALL Required for Every Function
+
+1. **Happy paths**: Normal successful operations
+2. **Edge cases**: Zero values, max values, boundary conditions
+3. **Access control**: Unauthorized callers, wrong addresses
+4. **State changes**: Verify all storage mutations, balance changes
+5. **Events**: Verify emissions with exact parameters
+6. **Reverts**: Test every custom error by name
+7. **Reentrancy**: Verify ReentrancyGuard on functions with external calls
+8. **Time-dependent**: Use `time.increase()` / `time.increaseTo()` for deadlines
+9. **Token edge cases**: Fee-on-transfer tokens, non-standard decimals
+10. **Multi-user scenarios**: Multiple depositors, claimants interacting
+
+## Common Utilities
+
+```typescript
+import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
+// Time manipulation
+await time.increase(ONE_DAY);
+await time.increaseTo(specificTimestamp);
+const latest = await time.latest();
+
+// Event testing
+await expect(transaction)
+  .to.emit(contract, "EventName")
+  .withArgs(argument1, argument2);
+
+// Revert testing
+await expect(transaction)
+  .to.be.revertedWithCustomError(contract, "ErrorName");
+
+// Balance changes
+await expect(transaction).to.changeEtherBalance(account, amount);
+await expect(transaction).to.changeTokenBalance(token, account, amount);
+```
+
+## Current Test Suite
+
+```
+test/
+├── ExclusiveClaim.test.ts    # 38 tests
+├── CryptoInheritance.test.ts # 34 tests
+└── FileCertification.test.ts # 18 tests
+```
+
+Total: 90+ tests. Every new contract or function must maintain this standard.

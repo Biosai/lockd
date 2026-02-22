@@ -35,3 +35,8 @@ npm-debug.log*
 # Package lock files (using npm)
 yarn.lock
 pnpm-lock.yaml
+
+# Audit reports (keep .md)
+reports/*.json
+reports/*.sarif
+reports/*.txt

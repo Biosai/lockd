@@ -1,84 +1,57 @@
-# Lockd - Exclusive Claim Project Rules
+# Lockd — Company Context (Always Loaded)
 
-## Project Overview
+## What We're Building
 
-Lockd is a trustless crypto escrow system allowing users to deposit ETH or ERC20 tokens for specific recipients. The recipient can claim at any time; after a deadline, the depositor can refund.
+Lockd is the trust layer for crypto — a protocol that replaces banks, lawyers, and escrow services with deterministic smart contracts.
+
+**Vision**: A world where value transfer doesn't require trust in people, institutions, or intermediaries.
+
+**Mission**: Make blockchain-based value transfer accessible, safe, and programmable for everyone.
+
+**Products**:
+1. **Lockd Payments** (`ExclusiveClaim.sol`) — Trustless escrow with automatic refund protection
+2. **Lockd Inheritance** (`CryptoInheritance.sol`) — Dead man's switch inheritance planning
+3. **Lockd Certify** (`FileCertification.sol`) — On-chain proof of file existence
+
+## Decision-Making Principles
+
+Apply these in order when making any technical or product decision:
+
+1. **Security first** — Never compromise security for features, speed, or convenience
+2. **Simplicity over cleverness** — Readable code is auditable code
+3. **User impact** — Every change should improve the experience for depositors, claimants, or certifiers
+4. **On-chain minimalism** — Only what must be on-chain goes on-chain
+5. **Testability** — If it can't be tested, it shouldn't be shipped
+
+## Product Awareness
+
+- **Lockd Payments** is the core product and primary user funnel — must be rock-solid
+- **Lockd Inheritance** is the highest-value product — UX must be exceptionally clear for non-crypto-native users
+- **Lockd Certify** is the lightest product — must be frictionless
+- **Claim pages** are the most critical UX surface — often a user's first interaction with Lockd
+- **Error messages** are product — a confusing error costs us a user
+
+## Quality Bar
+
+Before any change is considered complete:
+1. All tests pass (`npm run test`)
+2. Contracts compile (`npm run compile`)
+3. Web app builds (`npm run build`)
+4. New contract code has 100% test coverage
+5. All user-facing strings in translation files (en.json + fr.json)
+6. Error states handled with user-friendly messages
 
 ## Architecture
 
-- **Monorepo** using npm workspaces
-- **Smart Contracts**: `contracts/` - Solidity ^0.8.24 with Hardhat
-- **Web App**: `apps/web/` - Next.js 16 with React 18, wagmi, RainbowKit
+- **Monorepo**: npm workspaces
+- **Contracts**: `contracts/` — Solidity ^0.8.24, Hardhat, OpenZeppelin v5
+- **Web App**: `apps/web/` — Next.js 16, React 19, wagmi v2, RainbowKit
+- **Networks**: Arbitrum mainnet (42161) + Arbitrum Sepolia (421614)
 
-## Critical Requirements
-
-### Smart Contracts - 100% Test Coverage MANDATORY
-
-Every line, branch, statement, and function in smart contracts MUST be tested. Run `npx hardhat coverage` to verify.
-
-Test requirements:
-- All happy paths
-- All error conditions (custom errors)
-- All edge cases (zero values, max values, boundaries)
-- All access control checks
-- All event emissions
-- Time-dependent logic (use hardhat-network-helpers)
-
-### Security First
-
-- Use OpenZeppelin contracts for standard functionality
-- Follow Checks-Effects-Interactions pattern
-- Use ReentrancyGuard for state-changing external calls
-- Use SafeERC20 for token transfers
-- Custom errors over require strings
-
-### Web3 Best Practices
-
-- Always verify contract is deployed on current chain before interactions
-- Sanitize blockchain errors before showing to users
-- Handle wallet disconnection gracefully
-- Support multiple chains (mainnet + testnets)
-
-## Code Style
-
-### Solidity
-- Custom errors: `error ErrorName();`
-- Events: `event EventName(type indexed param);`
-- NatSpec for all public functions
-- Organize: imports → types → state → events → errors → modifiers → functions
-
-### TypeScript
-- Strict mode enabled
-- Explicit return types for functions
-- Use `const` by default
-- Destructure props in components
-
-### React/Next.js
-- Server Components by default, `"use client"` only when needed
-- Colocate related code (component + types + utils)
-- Use next-intl for all user-facing strings
-- Tailwind CSS for styling, CSS variables for theming
-
-## File Naming
+## Naming Standards
 
 - Solidity: PascalCase (`ExclusiveClaim.sol`)
-- TypeScript/React: kebab-case (`create-deposit-form.tsx`)
-- Test files: `*.test.ts` (contracts), `*.test.tsx` (components)
-
-## Commands
-
-```bash
-npm run compile    # Compile contracts
-npm run test       # Run contract tests
-npm run dev        # Start web app dev server
-npm run build      # Build web app
-```
-
-## Supported Networks
-
-- Arbitrum (mainnet)
-- Arbitrum Sepolia (testnet)
-- Base, Optimism, Polygon (configured but verify deployment)
-
-
-
+- TypeScript / React: kebab-case (`create-deposit-form.tsx`)
+- Tests: `*.test.ts` (contracts), `*.test.tsx` (components)
+- Full descriptive names — never abbreviate (`environment` not `env`, `parameter` not `param`)
+- Booleans must have verb prefix: `isLoading`, `hasError`, `canRefund`

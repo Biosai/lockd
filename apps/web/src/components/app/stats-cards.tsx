@@ -2,8 +2,15 @@
 
 import { useChainId, useReadContract, useReadContracts } from "wagmi";
 import { formatEther, formatUnits } from "viem";
-import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, isValidContractAddress, TOKENS } from "@/lib/contracts";
-import { Loader2, Layers, Lock, CheckCircle } from "lucide-react";
+import { 
+  CLAIMABLE_ADDRESSES, 
+  CLAIMABLE_ABI, 
+  INHERITANCE_ADDRESSES,
+  INHERITANCE_ABI,
+  isValidContractAddress, 
+  TOKENS 
+} from "@/lib/contracts";
+import { Loader2, Layers, Lock, CheckCircle, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
@@ -46,45 +53,111 @@ function getKnownTokenDecimals(chainId: number, tokenAddress: string): number | 
   return null;
 }
 
+// Helper to compute USD value from deposits
+function computeUsdValues(
+  deposits: Deposit[],
+  ethPrice: number,
+  chainId: number
+): { usdLocked: number; usdClaimed: number } {
+  let usdLocked = 0;
+  let usdClaimed = 0;
+  const stablecoins = STABLECOIN_ADDRESSES[chainId] || new Set();
+
+  for (const deposit of deposits) {
+    const tokenLower = deposit.token.toLowerCase();
+    let usdValue = 0;
+
+    if (deposit.token === ETH_ADDRESS) {
+      const ethAmount = Number(formatEther(deposit.amount));
+      usdValue = ethAmount * ethPrice;
+    } else if (stablecoins.has(tokenLower)) {
+      const decimals = getKnownTokenDecimals(chainId, deposit.token) ?? 6;
+      usdValue = Number(formatUnits(deposit.amount, decimals));
+    } else {
+      continue;
+    }
+
+    if (deposit.claimed) {
+      usdClaimed += usdValue;
+    } else {
+      usdLocked += usdValue;
+    }
+  }
+
+  return { usdLocked, usdClaimed };
+}
+
 export function StatsCards() {
   const chainId = useChainId();
-  const contractAddress = CLAIMABLE_ADDRESSES[chainId];
+  const claimableAddress = CLAIMABLE_ADDRESSES[chainId];
+  const inheritanceAddress = INHERITANCE_ADDRESSES[chainId];
   const t = useTranslations("stats");
   const { ethPrice, isLoading: isLoadingPrice } = useEthPrice();
 
-  const isContractConfigured = isValidContractAddress(contractAddress);
+  const isClaimableConfigured = isValidContractAddress(claimableAddress);
+  const isInheritanceConfigured = isValidContractAddress(inheritanceAddress);
+  const hasAnyContract = isClaimableConfigured || isInheritanceConfigured;
 
-  // Get total deposit count
-  const { data: depositCount, isLoading: isLoadingCount } = useReadContract({
-    address: contractAddress,
+  // ============ ExclusiveClaim Contract ============
+  
+  const { data: claimableCount, isLoading: isLoadingClaimableCount } = useReadContract({
+    address: claimableAddress,
     abi: CLAIMABLE_ABI,
     functionName: "depositCount",
     query: {
-      enabled: isContractConfigured,
+      enabled: isClaimableConfigured,
     },
   });
 
-  // Create array of deposit IDs to fetch
-  const depositIds = useMemo(() => {
-    if (!depositCount) return [];
-    const count = Number(depositCount);
+  const claimableIds = useMemo(() => {
+    if (!claimableCount) return [];
+    const count = Number(claimableCount);
     return Array.from({ length: count }, (_, i) => BigInt(i));
-  }, [depositCount]);
+  }, [claimableCount]);
 
-  // Fetch all deposit details
-  const { data: depositsData, isLoading: isLoadingDeposits } = useReadContracts({
-    contracts: depositIds.map((id) => ({
-      address: contractAddress,
+  const { data: claimableDeposits, isLoading: isLoadingClaimableDeposits } = useReadContracts({
+    contracts: claimableIds.map((id) => ({
+      address: claimableAddress,
       abi: CLAIMABLE_ABI,
       functionName: 'getDeposit' as const,
       args: [id],
     })),
     query: {
-      enabled: depositIds.length > 0 && isContractConfigured,
+      enabled: claimableIds.length > 0 && isClaimableConfigured,
     },
   });
 
-  // Compute statistics in USD
+  // ============ CryptoInheritance Contract ============
+  
+  const { data: inheritanceCount, isLoading: isLoadingInheritanceCount } = useReadContract({
+    address: inheritanceAddress,
+    abi: INHERITANCE_ABI,
+    functionName: "depositCount",
+    query: {
+      enabled: isInheritanceConfigured,
+    },
+  });
+
+  const inheritanceIds = useMemo(() => {
+    if (!inheritanceCount) return [];
+    const count = Number(inheritanceCount);
+    return Array.from({ length: count }, (_, i) => BigInt(i));
+  }, [inheritanceCount]);
+
+  const { data: inheritanceDeposits, isLoading: isLoadingInheritanceDeposits } = useReadContracts({
+    contracts: inheritanceIds.map((id) => ({
+      address: inheritanceAddress,
+      abi: INHERITANCE_ABI,
+      functionName: 'getDeposit' as const,
+      args: [id],
+    })),
+    query: {
+      enabled: inheritanceIds.length > 0 && isInheritanceConfigured,
+    },
+  });
+
+  // ============ Compute Combined Statistics ============
+
   const stats: Stats = useMemo(() => {
     const defaultStats: Stats = {
       totalDeposits: 0,
@@ -92,57 +165,49 @@ export function StatsCards() {
       usdClaimed: 0,
     };
 
-    if (!depositsData || ethPrice === null) return defaultStats;
+    if (ethPrice === null) return defaultStats;
 
-    const deposits: Deposit[] = depositsData
+    // Parse ExclusiveClaim deposits
+    const parsedClaimable: Deposit[] = (claimableDeposits || [])
       .map((result) => {
         if (result.status === 'success' && result.result) {
-          const [, , token, amount, , claimed] = result.result as [string, string, string, bigint, bigint, boolean, string];
+          const [, , token, amount, , , claimed] = result.result as [string, string, string, bigint, bigint, bigint, boolean, string];
           return { token, amount, claimed };
         }
         return null;
       })
       .filter((d): d is Deposit => d !== null);
 
-    const totalDeposits = deposits.length;
-    let usdLocked = 0;
-    let usdClaimed = 0;
+    // Parse CryptoInheritance deposits (has 2 extra fields: contentHash, claimSecretHash)
+    const parsedInheritance: Deposit[] = (inheritanceDeposits || [])
+      .map((result) => {
+        if (result.status === 'success' && result.result) {
+          const [, , token, amount, , , claimed] = result.result as [string, string, string, bigint, bigint, bigint, boolean, string, string, string];
+          return { token, amount, claimed };
+        }
+        return null;
+      })
+      .filter((d): d is Deposit => d !== null);
 
-    const stablecoins = STABLECOIN_ADDRESSES[chainId] || new Set();
+    const claimableValues = computeUsdValues(parsedClaimable, ethPrice, chainId);
+    const inheritanceValues = computeUsdValues(parsedInheritance, ethPrice, chainId);
 
-    for (const deposit of deposits) {
-      const tokenLower = deposit.token.toLowerCase();
-      let usdValue = 0;
+    return {
+      totalDeposits: parsedClaimable.length + parsedInheritance.length,
+      usdLocked: claimableValues.usdLocked + inheritanceValues.usdLocked,
+      usdClaimed: claimableValues.usdClaimed + inheritanceValues.usdClaimed,
+    };
+  }, [claimableDeposits, inheritanceDeposits, ethPrice, chainId]);
 
-      if (deposit.token === ETH_ADDRESS) {
-        // ETH: convert to USD using price feed
-        const ethAmount = Number(formatEther(deposit.amount));
-        usdValue = ethAmount * ethPrice;
-      } else if (stablecoins.has(tokenLower)) {
-        // Stablecoins (USDC, USDT): 1:1 with USD
-        const decimals = getKnownTokenDecimals(chainId, deposit.token) ?? 6;
-        usdValue = Number(formatUnits(deposit.amount, decimals));
-      } else {
-        // Other ERC20 tokens: try to get decimals, but skip USD conversion (we don't have price)
-        // For now, we'll skip unknown tokens in USD calculation
-        // Could be extended with more price feeds in the future
-        continue;
-      }
+  const isLoading = 
+    isLoadingClaimableCount || 
+    isLoadingClaimableDeposits || 
+    isLoadingInheritanceCount || 
+    isLoadingInheritanceDeposits || 
+    isLoadingPrice;
 
-      if (deposit.claimed) {
-        usdClaimed += usdValue;
-      } else {
-        usdLocked += usdValue;
-      }
-    }
-
-    return { totalDeposits, usdLocked, usdClaimed };
-  }, [depositsData, ethPrice, chainId]);
-
-  const isLoading = isLoadingCount || isLoadingDeposits || isLoadingPrice;
-
-  // Don't render anything if contract is not configured
-  if (!isContractConfigured) {
+  // Don't render anything if no contracts are configured
+  if (!hasAnyContract) {
     return null;
   }
 
@@ -160,6 +225,11 @@ export function StatsCards() {
       icon: Layers,
     },
     {
+      label: t("totalValueSecured"),
+      value: isLoading ? null : formatUsd(stats.usdLocked + stats.usdClaimed),
+      icon: TrendingUp,
+    },
+    {
       label: t("valueLocked"),
       value: isLoading ? null : formatUsd(stats.usdLocked),
       icon: Lock,
@@ -172,7 +242,7 @@ export function StatsCards() {
   ];
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
       {statItems.map((stat, index) => (
         <motion.div
           key={stat.label}
@@ -199,6 +269,4 @@ export function StatsCards() {
     </div>
   );
 }
-
-
 

@@ -3,9 +3,11 @@
     "arbitrum": {
       "chainId": 42161,
       "name": "Arbitrum One",
-      "contract": "0x4bC1352BBb0F5EA6C5988Fe33639A6995C2067D4",
-      "deployedAt": "2025-12-21",
-      "blockExplorer": "https://arbiscan.io"
+      "contract": "0x9084ee38a07Ff5DD38a07a3023a0A5baAeafC22B",
+      "deployedAt": "2026-02-22",
+      "blockExplorer": "https://arbiscan.io",
+      "inheritanceContract": "0x33cc40c2a817fb59f9a83D6D69Aa692f1406283F",
+      "certificationContract": "0xA3a78E0351c33973Cd4941Eb66e64dC95728265b"
     },
     "arbitrumSepolia": {
       "chainId": 421614,
@@ -52,5 +54,3 @@
     }
   }
 }
-
-

@@ -6,18 +6,8 @@ import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, isValidContractAddress } from "@/li
 import { Inbox, Loader2, AlertCircle } from "lucide-react";
 import { useMemo } from "react";
 import { DepositCard } from "./sent-deposits";
+import type { Deposit } from "@/lib/types";
 import { useTranslations } from "next-intl";
-
-interface Deposit {
-  id: number;
-  depositor: string;
-  claimant: string;
-  token: string;
-  amount: bigint;
-  deadline: bigint;
-  claimed: boolean;
-  title: string;
-}
 
 export function ReceivedDeposits() {
   const { address } = useAccount();
@@ -64,13 +54,14 @@ export function ReceivedDeposits() {
     return depositsData
       .map((result, index) => {
         if (result.status === 'success' && result.result) {
-          const [depositor, claimant, token, amount, deadline, claimed, title] = result.result as [string, string, string, bigint, bigint, boolean, string];
+          const [depositor, claimant, token, amount, startTime, deadline, claimed, title] = result.result as [string, string, string, bigint, bigint, bigint, boolean, string];
           return {
             id: Number(depositIds[index]),
             depositor,
             claimant,
             token,
             amount,
+            startTime,
             deadline,
             claimed,
             title,

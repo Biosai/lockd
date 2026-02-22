@@ -1,64 +1,67 @@
 import { ethers, run, network } from "hardhat";
 import * as dotenv from "dotenv";
+import * as fs from "fs";
+import * as path from "path";
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import Eth from "@ledgerhq/hw-app-eth";
 import { Transaction } from "ethers";
 
 dotenv.config();
 
-// Common Ledger derivation paths to search
-const DERIVATION_PATHS = [
-  "44'/60'/0'/0/0",   // Ledger Live / Standard (account 0, index 0)
-  "44'/60'/0'/0/1",   // Ledger Live (account 0, index 1)
-  "44'/60'/0'/0/2",   // Ledger Live (account 0, index 2)
-  "44'/60'/1'/0/0",   // Ledger Live (account 1, index 0)
-  "44'/60'/2'/0/0",   // Ledger Live (account 2, index 0)
-  "44'/60'/0'",       // Legacy MEW path
-  "44'/60'/0'/0",     // Legacy Jaxx/Metamask path
+const CONTRACTS_TO_DEPLOY = [
+  "ExclusiveClaim",
+  "FileCertification",
+  "CryptoInheritance",
 ];
 
-// Find the derivation path for a given address
+const DERIVATION_PATHS = [
+  "44'/60'/0'/0/0",
+  "44'/60'/0'/0/1",
+  "44'/60'/0'/0/2",
+  "44'/60'/1'/0/0",
+  "44'/60'/2'/0/0",
+  "44'/60'/0'",
+  "44'/60'/0'/0",
+];
+
 async function findDerivationPath(eth: Eth, targetAddress: string): Promise<string | null> {
   const normalizedTarget = targetAddress.toLowerCase();
   console.log(`🔍 Searching for address ${targetAddress} on Ledger...`);
-  
-  for (const path of DERIVATION_PATHS) {
+
+  for (const derivationPath of DERIVATION_PATHS) {
     try {
-      const result = await eth.getAddress(path);
+      const result = await eth.getAddress(derivationPath);
       const foundAddress = result.address.toLowerCase();
-      console.log(`   Path ${path}: ${result.address}`);
+      console.log(`   Path ${derivationPath}: ${result.address}`);
       if (foundAddress === normalizedTarget) {
-        console.log(`✅ Found matching path: ${path}`);
-        return path;
+        console.log(`✅ Found matching path: ${derivationPath}`);
+        return derivationPath;
       }
-    } catch (e) {
-      // Some paths may not be valid, skip them
+    } catch {
+      // Some paths may not be valid
     }
   }
-  
-  // Also try a wider range of account indices
+
   for (let account = 0; account < 10; account++) {
     for (let index = 0; index < 5; index++) {
-      const path = `44'/60'/${account}'/0/${index}`;
-      if (DERIVATION_PATHS.includes(path)) continue; // Already checked
-      
+      const derivationPath = `44'/60'/${account}'/0/${index}`;
+      if (DERIVATION_PATHS.includes(derivationPath)) continue;
+
       try {
-        const result = await eth.getAddress(path);
-        const foundAddress = result.address.toLowerCase();
-        if (foundAddress === normalizedTarget) {
-          console.log(`✅ Found matching path: ${path} -> ${result.address}`);
-          return path;
+        const result = await eth.getAddress(derivationPath);
+        if (result.address.toLowerCase() === normalizedTarget) {
+          console.log(`✅ Found matching path: ${derivationPath} -> ${result.address}`);
+          return derivationPath;
         }
-      } catch (e) {
+      } catch {
         // Skip invalid paths
       }
     }
   }
-  
+
   return null;
 }
 
-// Create a Ledger signer that works with ethers v6
 class LedgerSigner {
   private eth: Eth | null = null;
   private transport: any = null;
@@ -96,51 +99,48 @@ class LedgerSigner {
     return this._address;
   }
 
-  async signTransaction(tx: any): Promise<string> {
+  async signTransaction(transaction: any): Promise<string> {
     await this.connect();
     if (!this.eth) throw new Error("Ledger not connected");
 
-    // Build transaction
     const baseTx: any = {
-      type: tx.type ?? 2,
-      chainId: tx.chainId,
-      nonce: tx.nonce,
-      to: tx.to,
-      data: tx.data,
-      value: tx.value,
-      maxFeePerGas: tx.maxFeePerGas,
-      maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
-      gasLimit: tx.gasLimit,
+      type: transaction.type ?? 2,
+      chainId: transaction.chainId,
+      nonce: transaction.nonce,
+      to: transaction.to,
+      data: transaction.data,
+      value: transaction.value,
+      maxFeePerGas: transaction.maxFeePerGas,
+      maxPriorityFeePerGas: transaction.maxPriorityFeePerGas,
+      gasLimit: transaction.gasLimit,
     };
 
-    // Serialize unsigned transaction
-    const unsignedTx = Transaction.from(baseTx).unsignedSerialized.slice(2);
+    const unsignedTransaction = Transaction.from(baseTx).unsignedSerialized.slice(2);
 
     console.log("📱 Please confirm the transaction on your Ledger...");
-    
-    // Sign with Ledger
-    const sig = await this.eth.signTransaction(this.derivationPath, unsignedTx, null);
 
-    // Add signature to transaction
-    const signedTx = Transaction.from({
+    // Provide explicit empty resolution to avoid CDN calls to Ledger servers
+    const resolution = { domains: [], erc20Tokens: [], nfts: [], externalPlugin: [], plugin: [] };
+    const signature = await this.eth.signTransaction(this.derivationPath, unsignedTransaction, resolution);
+
+    const signedTransaction = Transaction.from({
       ...baseTx,
       signature: {
-        r: "0x" + sig.r,
-        s: "0x" + sig.s,
-        v: parseInt(sig.v, 16),
+        r: "0x" + signature.r,
+        s: "0x" + signature.s,
+        v: parseInt(signature.v, 16),
       },
     });
 
-    return signedTx.serialized;
+    return signedTransaction.serialized;
   }
 
-  async sendTransaction(tx: any): Promise<any> {
-    // Get nonce and fee data
+  async sendTransaction(transaction: any): Promise<any> {
     const nonce = await this.provider.getTransactionCount(this._address, "pending");
     const feeData = await this.provider.getFeeData();
 
-    const fullTx = {
-      ...tx,
+    const fullTransaction = {
+      ...transaction,
       from: this._address,
       nonce,
       chainId: (await this.provider.getNetwork()).chainId,
@@ -149,144 +149,192 @@ class LedgerSigner {
       type: 2,
     };
 
-    // Estimate gas if not provided
-    if (!fullTx.gasLimit) {
-      fullTx.gasLimit = await this.provider.estimateGas(fullTx);
+    if (!fullTransaction.gasLimit) {
+      fullTransaction.gasLimit = await this.provider.estimateGas(fullTransaction);
     }
 
-    const signedTx = await this.signTransaction(fullTx);
-    const response = await this.provider.broadcastTransaction(signedTx);
-    
-    return response;
+    const signedTransaction = await this.signTransaction(fullTransaction);
+    return await this.provider.broadcastTransaction(signedTransaction);
   }
 }
 
-async function main() {
-  console.log("Deploying ExclusiveClaim contract...");
-  console.log(`Network: ${network.name}`);
-
-  // Get deployer - works with both private key and Ledger
+async function getDeployer(): Promise<{ deployer: any; ledgerSigner: LedgerSigner | null }> {
   const signers = await ethers.getSigners();
-  let deployer: any;
-  let ledgerSigner: LedgerSigner | null = null;
 
   if (signers.length > 0) {
-    deployer = signers[0];
-  } else {
-    // For Ledger: create custom signer
-    const ledgerAddress = process.env.LEDGER_ACCOUNT;
-    if (!ledgerAddress) {
-      throw new Error("No signer available. Set PRIVATE_KEY or LEDGER_ACCOUNT in .env");
-    }
-    console.log("🔐 Using Ledger hardware wallet...");
-    
-    // First, find the correct derivation path for the configured address
-    const transport = await TransportNodeHid.open("");
-    const eth = new Eth(transport);
-    
-    const derivationPath = await findDerivationPath(eth, ledgerAddress);
-    await transport.close();
-    
-    if (!derivationPath) {
-      throw new Error(`Could not find derivation path for address ${ledgerAddress}. Make sure this address exists on your Ledger.`);
-    }
-    
-    ledgerSigner = new LedgerSigner(ledgerAddress, ethers.provider, derivationPath);
-    await ledgerSigner.connect();
-    deployer = ledgerSigner;
+    return { deployer: signers[0], ledgerSigner: null };
   }
 
+  const ledgerAddress = process.env.LEDGER_ACCOUNT;
+  if (!ledgerAddress) {
+    throw new Error("No signer available. Set PRIVATE_KEY or LEDGER_ACCOUNT in .env");
+  }
+
+  console.log("🔐 Using Ledger hardware wallet...");
+  const transport = await TransportNodeHid.open("");
+  const eth = new Eth(transport);
+  const derivationPath = await findDerivationPath(eth, ledgerAddress);
+  await transport.close();
+
+  if (!derivationPath) {
+    throw new Error(`Could not find derivation path for address ${ledgerAddress}.`);
+  }
+
+  const ledgerSigner = new LedgerSigner(ledgerAddress, ethers.provider, derivationPath);
+  await ledgerSigner.connect();
+  return { deployer: ledgerSigner, ledgerSigner };
+}
+
+async function verifyContract(contractAddress: string, contractName: string): Promise<void> {
+  if (network.name === "hardhat" || network.name === "localhost") return;
+
+  console.log("Waiting for block confirmations...");
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  console.log(`\n=== Verifying ${contractName} ===`);
+  try {
+    await run("verify:verify", {
+      address: contractAddress,
+      constructorArguments: [],
+    });
+    console.log(`✅ ${contractName} verified on Arbiscan!`);
+  } catch (error: any) {
+    if (error.message.includes("Already Verified")) {
+      console.log(`✅ ${contractName} is already verified on Arbiscan.`);
+    } else {
+      console.error(`⚠️  Arbiscan verification failed for ${contractName}:`, error.message);
+    }
+  }
+
+  try {
+    await run("verify:verify", {
+      address: contractAddress,
+      constructorArguments: [],
+      force: true,
+    });
+    console.log(`✅ ${contractName} verified on Sourcify!`);
+  } catch (error: any) {
+    if (error.message.includes("Already Verified") || error.message.includes("already verified")) {
+      console.log(`✅ ${contractName} is already verified on Sourcify.`);
+    } else {
+      console.log(`ℹ️  Sourcify verification skipped for ${contractName}`);
+    }
+  }
+}
+
+async function deployContract(contractName: string, deployer: any): Promise<string> {
+  console.log(`\n${"=".repeat(50)}`);
+  console.log(`📝 Deploying ${contractName}...`);
+  console.log(`${"=".repeat(50)}`);
+
+  const factory = await ethers.getContractFactory(contractName);
+  const deployTransaction = await factory.getDeployTransaction();
+
+  const transactionResponse = await deployer.sendTransaction({
+    data: deployTransaction.data,
+  });
+
+  console.log(`Transaction hash: ${transactionResponse.hash}`);
+  console.log("Waiting for confirmation...");
+
+  const receipt = await transactionResponse.wait();
+  const contractAddress = receipt.contractAddress;
+
+  console.log(`✅ ${contractName} deployed to: ${contractAddress}`);
+  return contractAddress;
+}
+
+function updateDeploymentsFile(deployedContracts: Record<string, string>): void {
+  const deploymentsPath = path.join(__dirname, "..", "deployments.json");
+  let deployments: any = {};
+
+  if (fs.existsSync(deploymentsPath)) {
+    deployments = JSON.parse(fs.readFileSync(deploymentsPath, "utf8"));
+  }
+
+  const networkName = network.name;
+  const chainId = network.config.chainId;
+  const today = new Date().toISOString().split("T")[0];
+
+  if (!deployments.networks) deployments.networks = {};
+
+  if (deployedContracts["ExclusiveClaim"]) {
+    deployments.networks[networkName] = {
+      ...deployments.networks[networkName],
+      chainId,
+      name: networkName === "arbitrum" ? "Arbitrum One" : "Arbitrum Sepolia",
+      contract: deployedContracts["ExclusiveClaim"],
+      deployedAt: today,
+      blockExplorer: networkName === "arbitrum" ? "https://arbiscan.io" : "https://sepolia.arbiscan.io",
+    };
+  }
+
+  if (deployedContracts["CryptoInheritance"]) {
+    if (!deployments.networks[networkName]) deployments.networks[networkName] = {};
+    deployments.networks[networkName].inheritanceContract = deployedContracts["CryptoInheritance"];
+  }
+
+  if (deployedContracts["FileCertification"]) {
+    if (!deployments.networks[networkName]) deployments.networks[networkName] = {};
+    deployments.networks[networkName].certificationContract = deployedContracts["FileCertification"];
+  }
+
+  fs.writeFileSync(deploymentsPath, JSON.stringify(deployments, null, 2) + "\n");
+  console.log(`\n📄 Updated deployments.json`);
+}
+
+async function main() {
+  console.log("🚀 Lockd — Full Contract Deployment");
+  console.log(`Network: ${network.name} (Chain ID: ${network.config.chainId})`);
+  console.log(`Contracts: ${CONTRACTS_TO_DEPLOY.join(", ")}\n`);
+
+  const { deployer, ledgerSigner } = await getDeployer();
   console.log(`Deployer address: ${deployer.address}`);
 
   const balance = await ethers.provider.getBalance(deployer.address);
   console.log(`Deployer balance: ${ethers.formatEther(balance)} ETH`);
 
-  // Get contract bytecode
-  const ExclusiveClaim = await ethers.getContractFactory("ExclusiveClaim");
-  const deployTx = await ExclusiveClaim.getDeployTransaction();
+  const deployedContracts: Record<string, string> = {};
 
-  console.log("\n📝 Deploying contract...");
-  
-  // Send deployment transaction
-  const txResponse = await deployer.sendTransaction({
-    data: deployTx.data,
-  });
+  for (const contractName of CONTRACTS_TO_DEPLOY) {
+    const contractAddress = await deployContract(contractName, deployer);
+    deployedContracts[contractName] = contractAddress;
+    await verifyContract(contractAddress, contractName);
+  }
 
-  console.log(`Transaction hash: ${txResponse.hash}`);
-  console.log("Waiting for confirmation...");
-
-  const receipt = await txResponse.wait();
-  const contractAddress = receipt.contractAddress;
-
-  console.log(`\n✅ ExclusiveClaim deployed to: ${contractAddress}`);
-
-  // Close Ledger connection
   if (ledgerSigner) {
     await ledgerSigner.close();
   }
 
-  // Wait for a few block confirmations before verifying
-  if (network.name !== "hardhat" && network.name !== "localhost") {
-    console.log("Waiting for additional block confirmations...");
-    // Wait for 4 more blocks (we already waited for 1)
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+  updateDeploymentsFile(deployedContracts);
 
-    // Verify on Arbiscan
-    console.log("\n=== Contract Verification ===");
-    console.log("Verifying contract on Arbiscan...");
-    try {
-      await run("verify:verify", {
-        address: contractAddress,
-        constructorArguments: [],
-      });
-      console.log("✅ Contract verified on Arbiscan!");
-    } catch (error: any) {
-      if (error.message.includes("Already Verified")) {
-        console.log("✅ Contract is already verified on Arbiscan.");
-      } else {
-        console.error("⚠️  Arbiscan verification failed:", error.message);
-        console.log("   Make sure ARBISCAN_API_KEY is set in your .env file");
-      }
-    }
-
-    // Also verify on Sourcify (no API key needed)
-    console.log("\nVerifying contract on Sourcify...");
-    try {
-      await run("verify:verify", {
-        address: contractAddress,
-        constructorArguments: [],
-        force: true,
-      });
-      console.log("✅ Contract verified on Sourcify!");
-    } catch (error: any) {
-      if (
-        error.message.includes("Already Verified") ||
-        error.message.includes("already verified")
-      ) {
-        console.log("✅ Contract is already verified on Sourcify.");
-      } else {
-        // Sourcify verification is optional, don't fail
-        console.log(
-          "ℹ️  Sourcify verification skipped (may already be verified via Arbiscan)"
-        );
-      }
-    }
+  console.log("\n" + "=".repeat(50));
+  console.log("🎉 DEPLOYMENT COMPLETE");
+  console.log("=".repeat(50));
+  console.log(`Network: ${network.name} (Chain ID: ${network.config.chainId})`);
+  for (const [contractName, address] of Object.entries(deployedContracts)) {
+    console.log(`${contractName}: ${address}`);
   }
 
-  // Log useful information
-  console.log("\n=== Deployment Summary ===");
-  console.log(`Contract: ExclusiveClaim`);
-  console.log(`Address: ${contractAddress}`);
-  console.log(`Network: ${network.name}`);
-  console.log(`Chain ID: ${network.config.chainId}`);
+  const explorerBase = network.name === "arbitrum"
+    ? "https://arbiscan.io/address/"
+    : "https://sepolia.arbiscan.io/address/";
 
-  // Log common token addresses for convenience
+  console.log("\n=== Block Explorer Links ===");
+  for (const [contractName, address] of Object.entries(deployedContracts)) {
+    console.log(`${contractName}: ${explorerBase}${address}`);
+  }
+
   if (network.name === "arbitrum") {
-    console.log("\n=== Common Token Addresses on Arbitrum ===");
-    console.log("USDC: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831");
-    console.log("USDT: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9");
-    console.log("WETH: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1");
-    console.log("ARB: 0x912CE59144191C1204E64559FE8253a0e49E6548");
+    console.log("\n=== Update .env.local with ===");
+    console.log(`NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM=${deployedContracts["ExclusiveClaim"]}`);
+    console.log(`NEXT_PUBLIC_INHERITANCE_ADDRESS_ARBITRUM=${deployedContracts["CryptoInheritance"]}`);
+    console.log(`NEXT_PUBLIC_CERTIFICATION_ADDRESS_ARBITRUM=${deployedContracts["FileCertification"]}`);
+  } else if (network.name === "arbitrumSepolia") {
+    console.log("\n=== Update .env.local with ===");
+    console.log(`NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM_SEPOLIA=${deployedContracts["ExclusiveClaim"]}`);
+    console.log(`NEXT_PUBLIC_INHERITANCE_ADDRESS_ARBITRUM_SEPOLIA=${deployedContracts["CryptoInheritance"]}`);
+    console.log(`NEXT_PUBLIC_CERTIFICATION_ADDRESS_ARBITRUM_SEPOLIA=${deployedContracts["FileCertification"]}`);
   }
 }
 

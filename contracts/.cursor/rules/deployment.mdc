@@ -1,0 +1,58 @@
+---
+description: Contract deployment procedures and checklists
+globs: ["scripts/**/*.ts", "hardhat.config.ts"]
+---
+
+# Deployment Rules
+
+Full guide with addresses and step-by-step instructions: `DEPLOYMENT.md`
+
+## Pre-Deployment Checklist
+
+1. [ ] All tests passing with 100% coverage (`npx hardhat coverage`)
+2. [ ] `npm run audit:solhint` passes with no errors
+3. [ ] Slither analysis reviewed
+4. [ ] Contract verified on testnet first
+5. [ ] Manual testing on testnet completed
+6. [ ] Gas usage reviewed
+7. [ ] All NatSpec documentation complete
+8. [ ] Deployment parameters double-checked
+9. [ ] Frontend updated with new contract addresses
+
+## Pre-Mainnet Checklist (High-Value)
+
+1. [ ] Professional third-party security audit completed
+2. [ ] All audit findings addressed or acknowledged
+3. [ ] Formal verification considered for critical functions
+4. [ ] Emergency response plan documented
+5. [ ] Bug bounty program established
+
+## Post-Deployment
+
+1. Verify contract on block explorer (Arbiscan + Sourcify)
+2. Update `DEPLOYMENT.md` with address and date
+3. Update `apps/web/.env.example` and `.env.local`
+4. Test the frontend against the new deployment
+5. Rebuild and deploy the web app
+
+## Compiler Settings (Must Match for Verification)
+
+| Setting | Value |
+|---------|-------|
+| Solidity | 0.8.24 |
+| Optimizer | Enabled, 200 runs |
+| viaIR | true |
+
+Do not change these between deployments — bytecode must match.
+
+## Contract Relationships
+
+```
+ExclusiveClaim (base)
+    ↓ extends
+CryptoInheritance (adds secrets, check-ins, batching)
+
+FileCertification (standalone)
+```
+
+All three deploy independently with no constructor arguments.

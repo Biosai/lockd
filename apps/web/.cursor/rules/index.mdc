@@ -1,298 +1,60 @@
 ---
-description: Web application development rules - Next.js, React, and Web3
+description: Web app product context, user journeys, and project structure
 globs: ["apps/web/**/*"]
 ---
 
-# Web Application Guidelines
+# Lockd Web App — Product Context
 
-## Technology Stack
+## The Frontend IS the Product
 
-- **Framework**: Next.js 16 with App Router
-- **UI Library**: React 18
-- **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS with CSS variables
-- **Components**: Radix UI primitives with custom styling
-- **Web3**: wagmi v2, viem, RainbowKit
-- **Internationalization**: next-intl
-- **Animation**: Framer Motion
+Users don't interact with smart contracts directly — they interact with this web app. A confusing form loses a depositor. A broken claim page loses a claimant.
+
+## Three User Journeys to Protect
+
+1. **Depositor**: Landing → Connect wallet → Create deposit → Share claim link
+2. **Claimant**: Click claim link → Connect wallet → Claim funds (often their FIRST Lockd interaction)
+3. **Certifier**: Navigate to Certify → Drop file → Certify hash → Verify later
+
+## Tech Stack
+
+- Next.js 16 (App Router), React 19, TypeScript (strict)
+- Tailwind CSS, Radix UI, Framer Motion
+- wagmi v2, viem, RainbowKit
+- next-intl (English + French)
 
 ## Project Structure
 
 ```
-apps/web/
-├── src/
-│   ├── app/                 # Next.js App Router pages
-│   │   ├── layout.tsx       # Root layout with providers
-│   │   ├── page.tsx         # Landing page
-│   │   ├── app/             # Main app dashboard
-│   │   └── claim/[id]/      # Dynamic claim pages
-│   ├── components/
-│   │   ├── ui/              # Reusable UI primitives
-│   │   └── app/             # Feature-specific components
-│   ├── lib/
-│   │   ├── contracts.ts     # Contract addresses and ABIs
-│   │   ├── wagmi.ts         # Wagmi configuration
-│   │   └── utils.ts         # Utility functions
-│   └── i18n/                # Internationalization config
-├── messages/                # Translation files (en.json, fr.json)
-└── public/                  # Static assets
+apps/web/src/
+├── app/
+│   ├── page.tsx               # / — Landing page (SEO, no wallet)
+│   ├── payments/page.tsx      # /payments — Payments landing (SEO)
+│   ├── inheritance/page.tsx   # /inheritance — Inheritance landing (SEO)
+│   ├── certify/page.tsx       # /certify — Certify landing (SEO)
+│   ├── app/
+│   │   ├── layout.tsx         # App shell (Header, AppNav, Footer)
+│   │   ├── page.tsx           # /app — Payments dashboard
+│   │   ├── certify/page.tsx   # /app/certify — Certify + Verify
+│   │   └── inheritance/page.tsx # /app/inheritance — Coming soon
+│   └── claim/[id]/page.tsx    # /claim/[id] — Public claim page
+├── components/
+│   ├── ui/                    # Reusable primitives
+│   ├── app/                   # Payments feature components
+│   ├── certify/               # Certification feature components
+│   └── app-navigation.tsx     # Product navigation for app shell
+├── lib/                       # Contracts, wagmi, utils
+└── i18n/                      # Internationalization config
 ```
 
-## React & Next.js Conventions
+**Landing pages** (`/`, `/payments`, `/inheritance`, `/certify`) are for SEO and explanation — no wallet required.
+**App pages** (`/app`, `/app/certify`, `/app/inheritance`) are functional — wallet-connected, task-focused.
 
-### Component Structure
+## Page-Specific UX Priorities
 
-```tsx
-"use client"; // Only if client-side features needed
+**Claim page** — Most critical. Often first interaction. Must load fast, explain clearly, work on mobile. Handle: already claimed, wrong wallet, expired deadline, invalid ID.
 
-import { useState, useMemo } from "react";
-import { useTranslations } from "next-intl";
-// External imports first, then internal
-import { Button } from "@/components/ui/button";
+**Create deposit form** — Primary funnel. Minimize friction, smart defaults, real-time validation, seamless ERC20 approval flow.
 
-interface ComponentProps {
-  title: string;
-  onAction?: () => void;
-}
+**Landing page** — Top of funnel. Fast load, value prop in < 5 seconds, prominent CTA, mobile-first.
 
-export function ComponentName({ title, onAction }: ComponentProps) {
-  const t = useTranslations("namespace");
-  const [state, setState] = useState<StateType>(initialValue);
-
-  // Memoized values
-  const computed = useMemo(() => /* computation */, [deps]);
-
-  // Event handlers
-  const handleClick = () => {
-    // Logic
-  };
-
-  return (
-    <div className="...">
-      {/* JSX */}
-    </div>
-  );
-}
-```
-
-### Naming Conventions
-
-- **Components**: PascalCase (`CreateDepositForm`)
-- **Files**: kebab-case (`create-deposit-form.tsx`)
-- **Hooks**: camelCase with `use` prefix (`useDeposits`)
-- **Event handlers**: `handle` prefix (`handleSubmit`)
-- **Boolean props**: `is`/`has` prefix (`isLoading`, `hasError`)
-- **Types/Interfaces**: PascalCase (`DepositFormProps`)
-
-### Client vs Server Components
-
-- Default to Server Components when possible
-- Use `"use client"` only when needed:
-  - useState, useEffect, other React hooks
-  - Browser APIs
-  - Event handlers
-  - wagmi hooks (blockchain interactions)
-
-## Web3 Integration
-
-### Contract Interactions
-
-```tsx
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { CLAIMABLE_ABI, CLAIMABLE_ADDRESSES } from "@/lib/contracts";
-
-function DepositComponent() {
-  const chainId = useChainId();
-  const contractAddress = CLAIMABLE_ADDRESSES[chainId];
-  
-  const { 
-    writeContract, 
-    data: hash, 
-    isPending, 
-    error 
-  } = useWriteContract();
-  
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ 
-    hash 
-  });
-
-  const handleDeposit = () => {
-    writeContract({
-      address: contractAddress,
-      abi: CLAIMABLE_ABI,
-      functionName: "depositETH",
-      args: [recipient, deadline, title],
-      value: parseEther(amount),
-    });
-  };
-}
-```
-
-### Error Handling for Blockchain Operations
-
-Always sanitize blockchain errors for users:
-
-```tsx
-const getErrorMessage = (error: Error | null) => {
-  if (!error) return null;
-  const msg = error.message.toLowerCase();
-  
-  if (msg.includes("user rejected")) return "Transaction cancelled";
-  if (msg.includes("insufficient")) return "Insufficient balance";
-  if (msg.includes("ledger")) return "Please check your Ledger device";
-  
-  return "Transaction failed. Please try again.";
-};
-```
-
-### Multi-Chain Support
-
-```tsx
-import { arbitrum, arbitrumSepolia } from "wagmi/chains";
-import { isValidContractAddress } from "@/lib/contracts";
-
-// Always check if contract is configured for current chain
-const isContractConfigured = isValidContractAddress(contractAddress);
-
-if (!isContractConfigured) {
-  return <NetworkNotSupported />;
-}
-```
-
-## Styling Guidelines
-
-### Tailwind CSS
-
-- Use Tailwind utility classes
-- Leverage CSS variables for theme consistency
-- Follow the design system in `globals.css`
-
-```tsx
-// Good
-<div className="flex items-center gap-4 rounded-lg bg-card p-4">
-
-// Avoid inline styles
-<div style={{ display: 'flex' }}>
-```
-
-### Dark Mode
-
-- Use `dark:` variant for dark mode styles
-- Prefer CSS variables that auto-adapt: `bg-background`, `text-foreground`
-
-### Animation
-
-Use Framer Motion for complex animations:
-
-```tsx
-import { motion, AnimatePresence } from "framer-motion";
-
-<AnimatePresence>
-  {isVisible && (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-    >
-      Content
-    </motion.div>
-  )}
-</AnimatePresence>
-```
-
-## Internationalization
-
-### Adding Translations
-
-1. Add keys to `messages/en.json` and `messages/fr.json`
-2. Use translations in components:
-
-```tsx
-import { useTranslations } from "next-intl";
-
-function Component() {
-  const t = useTranslations("namespace");
-  
-  return <p>{t("key")}</p>;
-  // With interpolation
-  return <p>{t("greeting", { name: "John" })}</p>;
-}
-```
-
-### Translation File Structure
-
-```json
-{
-  "namespace": {
-    "key": "Translation value",
-    "greeting": "Hello, {name}!"
-  }
-}
-```
-
-## UI Components
-
-### Using UI Primitives
-
-UI components in `components/ui/` are built on Radix UI:
-
-```tsx
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-
-<Button variant="default" size="lg" disabled={isLoading}>
-  {isLoading ? <Loader2 className="animate-spin" /> : "Submit"}
-</Button>
-```
-
-### Icons
-
-Use Lucide React for icons:
-
-```tsx
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-
-<AlertCircle className="h-5 w-5 text-destructive" />
-```
-
-## Form Handling
-
-### Validation Pattern
-
-```tsx
-const [recipient, setRecipient] = useState("");
-const isValidRecipient = recipient && isAddress(recipient);
-
-<Input
-  value={recipient}
-  onChange={(e) => setRecipient(e.target.value)}
-  className={recipient && !isValidRecipient ? "border-destructive" : ""}
-/>
-{recipient && !isValidRecipient && (
-  <p className="text-xs text-destructive">{t("invalidAddress")}</p>
-)}
-```
-
-## Performance Best Practices
-
-1. **Memoization**: Use `useMemo` for expensive computations
-2. **Lazy Loading**: Use dynamic imports for heavy components
-3. **Image Optimization**: Use Next.js Image component
-4. **SSR**: Leverage server components for initial data
-
-## Accessibility
-
-- Use semantic HTML elements
-- Add proper aria labels
-- Ensure keyboard navigation works
-- Maintain color contrast ratios
-- Use Radix UI for accessible primitives
-
-## Security Considerations
-
-- Validate all user inputs
-- Sanitize error messages (don't expose internal errors)
-- Use environment variables for API keys
-- Never store sensitive data in localStorage
-- Always verify contract addresses before transactions
+**Certify page** — Simplest flow. Drag-and-drop, local hash, one click to certify.

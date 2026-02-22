@@ -1,91 +1,49 @@
 ---
-description: Root project rules for Lockd - Exclusive Claim monorepo
+description: Project structure, build verification, and key references
 globs: ["**/*"]
 ---
 
-# Lockd Project Guidelines
+# Lockd — Project Structure
 
-This is a monorepo containing smart contracts and a web application for a trustless crypto escrow system.
-
-## Project Structure
+## Layout
 
 ```
 /
-├── contracts/         # Solidity smart contracts (Hardhat)
-├── apps/web/          # Next.js web application
-├── artifacts/         # Compiled contract artifacts
-├── typechain-types/   # TypeScript types generated from contracts
-├── test/              # Smart contract tests
-└── scripts/           # Deployment scripts
+├── contracts/         # Solidity smart contracts (the protocol)
+├── apps/web/          # Next.js web application (the product)
+├── test/              # Smart contract tests (90+ tests)
+├── scripts/           # Deployment scripts
+├── reports/           # Security audit reports
+├── artifacts/         # Compiled contract artifacts (generated)
+└── typechain-types/   # TypeScript types from contracts (generated)
 ```
 
-## Technology Stack
+## Build Verification — ALWAYS
 
-- **Smart Contracts**: Solidity ^0.8.24, Hardhat, OpenZeppelin
-- **Web App**: Next.js 16, React 18, TypeScript, Tailwind CSS, wagmi, RainbowKit
-- **Testing**: Hardhat (Mocha/Chai) for contracts, 100% coverage required
-- **Package Manager**: npm with workspaces
+Every task must end with a passing build. No exceptions.
 
-## Critical: Build Verification
+1. `npm run compile` — contracts compile without errors
+2. `npm run build` (in `apps/web/`) — Next.js build passes
+3. `npm run test` — all tests pass
 
-**ALWAYS verify the build succeeds after making any code changes.**
+## Key References
 
-Before considering any task complete:
-1. Run `npm run build` in `apps/web/` to verify the Next.js build passes
-2. Run `npm run compile` to verify smart contracts compile
-3. Fix any build errors before finishing
+| File | Purpose |
+|------|---------|
+| `README.md` | Vision, mission, product docs, roadmap |
+| `DEPLOYMENT.md` | Contract addresses, deployment guide |
+| `reports/audit-report.md` | Security audit findings |
+| `apps/web/.env.example` | Required environment variables |
+| `hardhat.config.ts` | Network and compiler config |
+| `apps/web/src/lib/contracts.ts` | Contract addresses, ABIs, tokens |
 
-Never push or commit code without confirming the build passes first.
-
-## General Conventions
-
-### Code Style
-
-- Use TypeScript for all non-Solidity code
-- Follow existing code patterns and conventions in each subdirectory
-- Use descriptive variable and function names
-- Add JSDoc/NatSpec comments for public functions and complex logic
-
-### Git Workflow
-
-- Write clear, descriptive commit messages
-- Keep commits atomic and focused
-- Reference issues in commits when applicable
-
-### Security
-
-- Never commit private keys, API keys, or secrets
-- Use environment variables for sensitive configuration
-- Follow security best practices for both contracts and web app
-- All smart contract changes require comprehensive test coverage
-
-### Dependencies
-
-- Prefer established, audited libraries (OpenZeppelin for contracts)
-- Keep dependencies up to date
-- Minimize external dependencies when possible
-
-## Running the Project
+## Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Compile contracts
-npm run compile
-
-# Run contract tests
-npm run test
-
-# Start web app development server
-npm run dev
-
-# Build web app
-npm run build
+npm run compile       # Compile contracts
+npm run test          # Run contract tests
+npm run coverage      # Tests with coverage report
+npm run dev           # Start web app dev server
+npm run build         # Build web app
+npm run audit         # Security audit pipeline
 ```
-
-## Deployment
-
-- Always test on testnet (Arbitrum Sepolia) before mainnet
-- Verify contracts on block explorers after deployment
-- Update `deployments.json` after successful deployments

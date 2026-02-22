@@ -17,21 +17,14 @@ import {
   FileText,
   Target,
   CheckCircle2,
-  Lock,
+  AlertTriangle,
+  Wallet,
+  HeartHandshake,
+  Send,
+  CalendarClock,
+  FileCheck,
 } from "lucide-react";
-
-function GithubIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-    </svg>
-  );
-}
+import { GithubIcon } from "@/components/ui/icons";
 import { useTranslations } from "next-intl";
 
 const fadeInUp = {
@@ -50,29 +43,25 @@ const staggerContainer = {
 
 export default function Home() {
   const t = useTranslations("home");
-  const tHowItWorks = useTranslations("howItWorks");
   const tFeatures = useTranslations("features");
   const tUseCases = useTranslations("useCases");
   const tCta = useTranslations("cta");
 
-  const howItWorksSteps = [
+  const problems = [
     {
-      step: tHowItWorks("step1.number"),
-      icon: Lock,
-      title: tHowItWorks("step1.title"),
-      description: tHowItWorks("step1.description"),
+      icon: Wallet,
+      title: t("problem1Title"),
+      description: t("problem1Desc"),
     },
     {
-      step: tHowItWorks("step2.number"),
-      icon: Users,
-      title: tHowItWorks("step2.title"),
-      description: tHowItWorks("step2.description"),
+      icon: HeartHandshake,
+      title: t("problem2Title"),
+      description: t("problem2Desc"),
     },
     {
-      step: tHowItWorks("step3.number"),
-      icon: Shield,
-      title: tHowItWorks("step3.title"),
-      description: tHowItWorks("step3.description"),
+      icon: AlertTriangle,
+      title: t("problem3Title"),
+      description: t("problem3Desc"),
     },
   ];
 
@@ -143,8 +132,8 @@ export default function Home() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-32">
+        {/* Hero Section - Vision First */}
+        <section className="relative overflow-hidden pt-32 pb-16 md:pt-40 md:pb-24">
           {/* Background Effects */}
           <div className="absolute inset-0 grid-pattern" />
           <div className="absolute top-1/4 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[120px]" />
@@ -161,58 +150,35 @@ export default function Home() {
               {/* Badge */}
               <motion.div
                 variants={fadeInUp}
-                className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-4 py-1.5 text-sm backdrop-blur-sm"
+                className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm"
               >
-                <Lock className="h-3.5 w-3.5 text-primary" />
-                <span className="text-muted-foreground">
+                <Shield className="h-3.5 w-3.5 text-primary" />
+                <span className="text-primary font-medium">
                   {t("badge")}
                 </span>
               </motion.div>
 
-              {/* Heading */}
+              {/* Heading - Vision Statement */}
               <motion.h1
                 variants={fadeInUp}
-                className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+                className="max-w-4xl text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
               >
-                {t("heading")}{" "}
+                {t("heading")}<br />
                 <span className="gradient-text">{t("headingHighlight")}</span> {t("headingEnd")}
               </motion.h1>
 
-              {/* Subheading */}
+              {/* Subheading - The Promise */}
               <motion.p
                 variants={fadeInUp}
-                className="mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl"
+                className="mt-8 max-w-2xl text-lg text-muted-foreground md:text-xl"
               >
                 {t("subheading")}
               </motion.p>
 
-              {/* CTA Buttons */}
+              {/* Trust indicators */}
               <motion.div
                 variants={fadeInUp}
-                className="mt-10 flex flex-col gap-4 sm:flex-row"
-              >
-                <Link href="/app">
-                  <Button size="lg" className="gap-2 shadow-lg shadow-primary/25">
-                    {t("launchApp")}
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link
-                  href="https://github.com/Biosai/lockd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button size="lg" variant="outline" className="gap-2">
-                    <GithubIcon className="h-4 w-4" />
-                    {t("viewOnGithub")}
-                  </Button>
-                </Link>
-              </motion.div>
-
-              {/* Trust Indicators */}
-              <motion.div
-                variants={fadeInUp}
-                className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground"
+                className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground"
               >
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -231,106 +197,242 @@ export default function Home() {
                   <span>{t("ethErc20")}</span>
                 </div>
               </motion.div>
-
-              {/* Platform Stats */}
-              <motion.div variants={fadeInUp} className="mt-12 w-full max-w-2xl">
-                <StatsCards />
-              </motion.div>
             </motion.div>
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="relative py-20 md:py-32">
-          <div className="mx-auto max-w-7xl px-6">
+        {/* Problems Section - Why Lockd Exists */}
+        <section className="relative py-16 md:py-24 bg-secondary/30">
+          <div className="mx-auto max-w-5xl px-6">
             <motion.div
-              className="text-center"
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                {t("problemsTitle")}
+              </h2>
+            </motion.div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {problems.map((problem, index) => (
+                <motion.div
+                  key={problem.title}
+                  className="rounded-2xl border border-border/40 bg-card p-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                    <problem.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 font-semibold">{problem.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {problem.description}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.p
+              className="mt-10 text-center text-xl font-semibold text-primary"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              {t("problemsSolution")}
+            </motion.p>
+          </div>
+        </section>
+
+        {/* Products Section - Two Ways to Lock Value */}
+        <section className="relative py-20 md:py-32">
+          <div className="mx-auto max-w-5xl px-6">
+            <motion.div
+              className="text-center mb-12"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {tHowItWorks("title")}
+                {t("productsTitle")}
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                {tHowItWorks("subtitle")}
-              </p>
             </motion.div>
 
-            <div className="mt-16 grid gap-8 md:grid-cols-3">
-              {howItWorksSteps.map((item, index) => (
-                <motion.div
-                  key={item.step}
-                  className="group relative"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <div className="glass rounded-2xl p-8 transition-all duration-300 hover:border-primary/30">
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="text-5xl font-bold text-primary/20">
-                        {item.step}
-                      </span>
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <item.icon className="h-6 w-6" />
-                      </div>
-                    </div>
-                    <h3 className="mt-4 text-xl font-semibold">{item.title}</h3>
-                    <p className="mt-2 text-muted-foreground">
-                      {item.description}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+            <div className="grid gap-8 md:grid-cols-3">
+              {/* Payments Product */}
+              <motion.div
+                className="group relative rounded-2xl border border-border/40 bg-card p-8 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Send className="h-7 w-7" />
+                </div>
+                <h3 className="mt-6 text-2xl font-bold">{t("paymentsTitle")}</h3>
+                <p className="mt-3 text-muted-foreground">
+                  {t("paymentsDesc")}
+                </p>
+                <Link href="/payments" className="mt-6 inline-block">
+                  <Button className="gap-2">
+                    {t("paymentsButton")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </motion.div>
+
+              {/* Inheritance Product */}
+              <motion.div
+                className="group relative rounded-2xl border border-border/40 bg-card p-8 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <CalendarClock className="h-7 w-7" />
+                </div>
+                <h3 className="mt-6 text-2xl font-bold">{t("inheritanceTitle")}</h3>
+                <p className="mt-3 text-muted-foreground">
+                  {t("inheritanceDesc")}
+                </p>
+                <Link href="/inheritance" className="mt-6 inline-block">
+                  <Button className="gap-2">
+                    {t("inheritanceButton")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </motion.div>
+
+              {/* Certify Product */}
+              <motion.div
+                className="group relative rounded-2xl border border-border/40 bg-card p-8 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <FileCheck className="h-7 w-7" />
+                </div>
+                <h3 className="mt-6 text-2xl font-bold">{t("certifyTitle")}</h3>
+                <p className="mt-3 text-muted-foreground">
+                  {t("certifyDesc")}
+                </p>
+                <Link href="/certify" className="mt-6 inline-block">
+                  <Button className="gap-2">
+                    {t("certifyButton")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="relative py-20 md:py-32 bg-secondary/30">
-          <div className="mx-auto max-w-7xl px-6">
+        {/* Stats Section - Social Proof */}
+        <section className="relative py-16 md:py-24 bg-secondary/30">
+          <div className="mx-auto max-w-5xl px-6">
             <motion.div
-              className="text-center"
+              className="text-center mb-8"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {tFeatures("title")}
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                {t("statsTitle")}
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                {tFeatures("subtitle")}
-              </p>
+            </motion.div>
+            <StatsCards />
+          </div>
+        </section>
+
+        {/* How It Works - Simple 3 steps */}
+        <section className="relative py-16 md:py-24">
+          <div className="mx-auto max-w-5xl px-6">
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                {t("howItWorksSimple")}
+              </h2>
             </motion.div>
 
-            <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  className="rounded-xl border border-border/40 bg-card p-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <feature.icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="mt-4 font-semibold">{feature.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              ))}
+            <div className="grid gap-6 md:grid-cols-3">
+              <motion.div
+                className="relative rounded-2xl border border-border/40 bg-card p-8 text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                  1
+                </div>
+                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-primary/10 text-primary mb-4 mt-2">
+                  <Shield className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold">{t("step1Title")}</h3>
+                <p className="mt-2 text-muted-foreground">
+                  {t("step1Desc")}
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="relative rounded-2xl border border-border/40 bg-card p-8 text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                  2
+                </div>
+                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-primary/10 text-primary mb-4 mt-2">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold">{t("step2Title")}</h3>
+                <p className="mt-2 text-muted-foreground">
+                  {t("step2Desc")}
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="relative rounded-2xl border border-border/40 bg-card p-8 text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                  3
+                </div>
+                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-primary/10 text-primary mb-4 mt-2">
+                  <Clock className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold">{t("step3Title")}</h3>
+                <p className="mt-2 text-muted-foreground">
+                  {t("step3Desc")}
+                </p>
+              </motion.div>
             </div>
           </div>
         </section>
 
         {/* Use Cases Section */}
-        <section id="use-cases" className="relative py-20 md:py-32">
+        <section id="use-cases" className="relative py-20 md:py-32 bg-secondary/30">
           <div className="mx-auto max-w-7xl px-6">
             <motion.div
               className="text-center"
@@ -370,6 +472,47 @@ export default function Home() {
                     </span>
                     <span className="text-xs font-medium">{useCase.example}</span>
                   </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="relative py-20 md:py-32">
+          <div className="mx-auto max-w-7xl px-6">
+            <motion.div
+              className="text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                {tFeatures("title")}
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                {tFeatures("subtitle")}
+              </p>
+            </motion.div>
+
+            <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  className="rounded-xl border border-border/40 bg-card p-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <feature.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 font-semibold">{feature.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {feature.description}
+                  </p>
                 </motion.div>
               ))}
             </div>

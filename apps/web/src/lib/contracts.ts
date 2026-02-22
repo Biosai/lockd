@@ -1,11 +1,31 @@
 import { Address, zeroAddress } from "viem";
 
+// ============ ExclusiveClaim (Simple Escrow) ============
+
 // Contract addresses per chain (Arbitrum only)
 // SECURITY: These must be updated with actual deployed contract addresses before production use
 // Set via environment variables: NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM and NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM_SEPOLIA
 export const CLAIMABLE_ADDRESSES: Record<number, Address> = {
   42161: (process.env.NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM as Address) || zeroAddress, // Arbitrum
   421614: (process.env.NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM_SEPOLIA as Address) || zeroAddress, // Arbitrum Sepolia
+};
+
+// ============ CryptoInheritance ============
+
+// CryptoInheritance contract addresses per chain
+// Set via environment variables: NEXT_PUBLIC_INHERITANCE_ADDRESS_ARBITRUM and NEXT_PUBLIC_INHERITANCE_ADDRESS_ARBITRUM_SEPOLIA
+export const INHERITANCE_ADDRESSES: Record<number, Address> = {
+  42161: (process.env.NEXT_PUBLIC_INHERITANCE_ADDRESS_ARBITRUM as Address) || zeroAddress, // Arbitrum
+  421614: (process.env.NEXT_PUBLIC_INHERITANCE_ADDRESS_ARBITRUM_SEPOLIA as Address) || zeroAddress, // Arbitrum Sepolia
+};
+
+// ============ FileCertification ============
+
+// FileCertification contract addresses per chain
+// Set via environment variables: NEXT_PUBLIC_CERTIFICATION_ADDRESS_ARBITRUM and NEXT_PUBLIC_CERTIFICATION_ADDRESS_ARBITRUM_SEPOLIA
+export const CERTIFICATION_ADDRESSES: Record<number, Address> = {
+  42161: (process.env.NEXT_PUBLIC_CERTIFICATION_ADDRESS_ARBITRUM as Address) || zeroAddress, // Arbitrum
+  421614: (process.env.NEXT_PUBLIC_CERTIFICATION_ADDRESS_ARBITRUM_SEPOLIA as Address) || zeroAddress, // Arbitrum Sepolia
 };
 
 /**
@@ -15,16 +35,6 @@ export const CLAIMABLE_ADDRESSES: Record<number, Address> = {
  */
 export function isValidContractAddress(address: Address | undefined): address is Address {
   return !!address && address !== zeroAddress;
-}
-
-/**
- * Error thrown when attempting to interact with an unconfigured contract
- */
-export class ContractNotConfiguredError extends Error {
-  constructor(chainId: number) {
-    super(`Contract address not configured for chain ${chainId}. Please set the appropriate environment variable.`);
-    this.name = "ContractNotConfiguredError";
-  }
 }
 
 // Common token addresses per chain (Arbitrum only)
@@ -73,6 +83,7 @@ export const CLAIMABLE_ABI = [
   {
     inputs: [
       { name: "claimant", type: "address" },
+      { name: "startTime", type: "uint256" },
       { name: "deadline", type: "uint256" },
       { name: "title", type: "string" },
     ],
@@ -86,6 +97,7 @@ export const CLAIMABLE_ABI = [
       { name: "claimant", type: "address" },
       { name: "token", type: "address" },
       { name: "amount", type: "uint256" },
+      { name: "startTime", type: "uint256" },
       { name: "deadline", type: "uint256" },
       { name: "title", type: "string" },
     ],
@@ -116,6 +128,7 @@ export const CLAIMABLE_ABI = [
       { name: "claimant", type: "address" },
       { name: "token", type: "address" },
       { name: "amount", type: "uint256" },
+      { name: "startTime", type: "uint256" },
       { name: "deadline", type: "uint256" },
       { name: "claimed", type: "bool" },
       { name: "title", type: "string" },
@@ -138,6 +151,7 @@ export const CLAIMABLE_ABI = [
       { indexed: true, name: "claimant", type: "address" },
       { indexed: false, name: "token", type: "address" },
       { indexed: false, name: "amount", type: "uint256" },
+      { indexed: false, name: "startTime", type: "uint256" },
       { indexed: false, name: "deadline", type: "uint256" },
       { indexed: false, name: "title", type: "string" },
     ],
@@ -206,5 +220,273 @@ export const ERC20_ABI = [
     outputs: [{ name: "", type: "string" }],
     stateMutability: "view",
     type: "function",
+  },
+] as const;
+
+// ============ CryptoInheritance ABI ============
+
+export const INHERITANCE_ABI = [
+  // depositETH
+  {
+    inputs: [
+      { name: "claimant", type: "address" },
+      { name: "startTime", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+      { name: "title", type: "string" },
+      { name: "contentHash", type: "bytes32" },
+      { name: "claimSecretHash", type: "bytes32" },
+    ],
+    name: "depositETH",
+    outputs: [{ name: "depositId", type: "uint256" }],
+    stateMutability: "payable",
+    type: "function",
+  },
+  // depositToken
+  {
+    inputs: [
+      { name: "claimant", type: "address" },
+      { name: "token", type: "address" },
+      { name: "amount", type: "uint256" },
+      { name: "startTime", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+      { name: "title", type: "string" },
+      { name: "contentHash", type: "bytes32" },
+      { name: "claimSecretHash", type: "bytes32" },
+    ],
+    name: "depositToken",
+    outputs: [{ name: "depositId", type: "uint256" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // batchDepositETH
+  {
+    inputs: [
+      { name: "claimants", type: "address[]" },
+      { name: "amounts", type: "uint256[]" },
+      { name: "startTime", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+      { name: "title", type: "string" },
+      { name: "contentHash", type: "bytes32" },
+    ],
+    name: "batchDepositETH",
+    outputs: [{ name: "depositIds", type: "uint256[]" }],
+    stateMutability: "payable",
+    type: "function",
+  },
+  // batchDepositToken
+  {
+    inputs: [
+      { name: "claimants", type: "address[]" },
+      { name: "token", type: "address" },
+      { name: "amounts", type: "uint256[]" },
+      { name: "startTime", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+      { name: "title", type: "string" },
+      { name: "contentHash", type: "bytes32" },
+    ],
+    name: "batchDepositToken",
+    outputs: [{ name: "depositIds", type: "uint256[]" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // claim (address-based)
+  {
+    inputs: [{ name: "depositId", type: "uint256" }],
+    name: "claim",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // claimWithSecret
+  {
+    inputs: [
+      { name: "depositId", type: "uint256" },
+      { name: "secret", type: "string" },
+    ],
+    name: "claimWithSecret",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // refund
+  {
+    inputs: [{ name: "depositId", type: "uint256" }],
+    name: "refund",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // extendDeadline
+  {
+    inputs: [
+      { name: "depositId", type: "uint256" },
+      { name: "newDeadline", type: "uint256" },
+    ],
+    name: "extendDeadline",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // batchExtendDeadline
+  {
+    inputs: [
+      { name: "depositIds", type: "uint256[]" },
+      { name: "newDeadline", type: "uint256" },
+    ],
+    name: "batchExtendDeadline",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // getDeposit
+  {
+    inputs: [{ name: "depositId", type: "uint256" }],
+    name: "getDeposit",
+    outputs: [
+      { name: "depositor", type: "address" },
+      { name: "claimant", type: "address" },
+      { name: "token", type: "address" },
+      { name: "amount", type: "uint256" },
+      { name: "startTime", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+      { name: "claimed", type: "bool" },
+      { name: "title", type: "string" },
+      { name: "contentHash", type: "bytes32" },
+      { name: "claimSecretHash", type: "bytes32" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  // depositCount
+  {
+    inputs: [],
+    name: "depositCount",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  // Events
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "depositId", type: "uint256" },
+      { indexed: true, name: "depositor", type: "address" },
+      { indexed: true, name: "claimant", type: "address" },
+      { indexed: false, name: "token", type: "address" },
+      { indexed: false, name: "amount", type: "uint256" },
+      { indexed: false, name: "startTime", type: "uint256" },
+      { indexed: false, name: "deadline", type: "uint256" },
+      { indexed: false, name: "title", type: "string" },
+      { indexed: false, name: "contentHash", type: "bytes32" },
+      { indexed: false, name: "claimSecretHash", type: "bytes32" },
+    ],
+    name: "DepositCreated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "depositId", type: "uint256" },
+      { indexed: true, name: "claimant", type: "address" },
+    ],
+    name: "Claimed",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "depositId", type: "uint256" },
+      { indexed: true, name: "depositor", type: "address" },
+    ],
+    name: "Refunded",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "depositId", type: "uint256" },
+      { indexed: false, name: "oldDeadline", type: "uint256" },
+      { indexed: false, name: "newDeadline", type: "uint256" },
+    ],
+    name: "DeadlineExtended",
+    type: "event",
+  },
+] as const;
+
+// ============ FileCertification ABI ============
+
+export const CERTIFICATION_ABI = [
+  // certify
+  {
+    inputs: [{ name: "contentHash", type: "bytes32" }],
+    name: "certify",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // isCertified
+  {
+    inputs: [{ name: "contentHash", type: "bytes32" }],
+    name: "isCertified",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  // getCertification
+  {
+    inputs: [{ name: "contentHash", type: "bytes32" }],
+    name: "getCertification",
+    outputs: [
+      { name: "certifier", type: "address" },
+      { name: "timestamp", type: "uint256" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  // getHashesByCertifier
+  {
+    inputs: [{ name: "certifier", type: "address" }],
+    name: "getHashesByCertifier",
+    outputs: [{ name: "", type: "bytes32[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  // getCertifierHashCount
+  {
+    inputs: [{ name: "certifier", type: "address" }],
+    name: "getCertifierHashCount",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  // certificationCount
+  {
+    inputs: [],
+    name: "certificationCount",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  // certifications mapping
+  {
+    inputs: [{ name: "", type: "bytes32" }],
+    name: "certifications",
+    outputs: [
+      { name: "certifier", type: "address" },
+      { name: "timestamp", type: "uint256" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  // Certified event
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "contentHash", type: "bytes32" },
+      { indexed: true, name: "certifier", type: "address" },
+      { indexed: false, name: "timestamp", type: "uint256" },
+    ],
+    name: "Certified",
+    type: "event",
   },
 ] as const;

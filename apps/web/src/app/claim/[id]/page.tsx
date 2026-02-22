@@ -17,6 +17,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { formatEther, formatUnits, type Address } from "viem";
 import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, ERC20_ABI, isValidContractAddress } from "@/lib/contracts";
 import { shortenAddress, formatDeadline } from "@/lib/utils";
+import { formatTransactionError } from "@/lib/format-transaction-error";
 import { motion } from "framer-motion";
 import {
   Clock,
@@ -25,6 +26,7 @@ import {
   Loader2,
   Gift,
   ArrowRight,
+  MessageSquare,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -86,9 +88,10 @@ export default function ClaimPage() {
         claimant: deposit[1],
         token: deposit[2],
         amount: deposit[3],
-        deadline: deposit[4],
-        claimed: deposit[5],
-        title: deposit[6],
+        startTime: deposit[4],
+        deadline: deposit[5],
+        claimed: deposit[6],
+        title: deposit[7],
       }
     : null;
 
@@ -142,6 +145,13 @@ export default function ClaimPage() {
   const deadlineReached =
     depositData &&
     BigInt(Math.floor(Date.now() / 1000)) > depositData.deadline;
+  
+  // Check if claiming is allowed based on startTime (0 = immediate)
+  const currentTimestamp = BigInt(Math.floor(Date.now() / 1000));
+  const claimNotYetAllowed =
+    depositData &&
+    depositData.startTime > 0n &&
+    currentTimestamp < depositData.startTime;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -235,6 +245,15 @@ export default function ClaimPage() {
 
                   {/* Details */}
                   <div className="space-y-4">
+                    {depositData.title && (
+                      <div className="flex items-start gap-3 rounded-lg bg-primary/5 p-3">
+                        <MessageSquare className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground">{t("message")}</p>
+                          <p className="text-sm font-medium break-words">{depositData.title}</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{t("from")}</span>
                       <span className="font-mono">
@@ -282,30 +301,7 @@ export default function ClaimPage() {
                           <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive">
                             <AlertCircle className="h-5 w-5 flex-shrink-0" />
                             <p className="text-sm">
-                              {/* Sanitize error messages - don't expose raw blockchain errors */}
-                              {(() => {
-                                const msg = error.message?.toLowerCase() || "";
-                                if (msg.includes("user rejected") || msg.includes("user denied")) {
-                                  return "Transaction was rejected by user";
-                                }
-                                if (msg.includes("insufficient")) {
-                                  return "Insufficient balance for this transaction";
-                                }
-                                // Ledger-specific errors
-                                if (msg.includes("0x6b0c") || msg.includes("0x6700") || msg.includes("no app") || msg.includes("device is locked") || msg.includes("locked device")) {
-                                  return "Ledger: Please unlock your device and open the Ethereum app";
-                                }
-                                if (msg.includes("disconnected") || msg.includes("transport") || msg.includes("hid") || msg.includes("cannot open")) {
-                                  return "Ledger: Device disconnected. Please reconnect your Ledger and open the Ethereum app";
-                                }
-                                if (msg.includes("0x6985") || msg.includes("condition not satisfied")) {
-                                  return "Ledger: Transaction rejected on device";
-                                }
-                                if (msg.includes("blind signing") || msg.includes("enable contract data") || msg.includes("contract data")) {
-                                  return "Ledger: Please enable 'Blind signing' in the Ethereum app settings";
-                                }
-                                return "Transaction failed. Please try again.";
-                              })()}
+                              {formatTransactionError(error)}
                             </p>
                           </div>
                         )}
@@ -318,6 +314,16 @@ export default function ClaimPage() {
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {t("fundsToWallet")}
+                            </p>
+                          </div>
+                        ) : claimNotYetAllowed ? (
+                          <div className="flex flex-col items-center gap-2 rounded-lg bg-amber-500/10 p-4 text-center">
+                            <Clock className="h-8 w-8 text-amber-500" />
+                            <p className="font-medium text-amber-600 dark:text-amber-400">
+                              Not yet claimable
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Available from {new Date(Number(depositData.startTime) * 1000).toLocaleString()}
                             </p>
                           </div>
                         ) : (

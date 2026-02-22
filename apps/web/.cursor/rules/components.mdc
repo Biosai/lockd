@@ -1,0 +1,93 @@
+---
+description: React and Next.js component conventions, naming, and patterns
+globs: ["apps/web/src/components/**/*", "apps/web/src/app/**/*.tsx"]
+---
+
+# React & Next.js Component Rules
+
+## Component Structure
+
+```tsx
+"use client"; // Only if client-side features needed
+
+import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+
+interface ComponentProps {
+  title: string;
+  onAction?: () => void;
+}
+
+export function ComponentName({ title, onAction }: ComponentProps) {
+  const translations = useTranslations("namespace");
+  const [state, setState] = useState<StateType>(initialValue);
+
+  const computedValue = useMemo(() => /* computation */, [dependencies]);
+
+  const handleClick = () => {
+    // Logic
+  };
+
+  return (
+    <div className="...">
+      {/* JSX */}
+    </div>
+  );
+}
+```
+
+## Naming Conventions
+
+- **Components**: PascalCase (`CreateDepositForm`)
+- **Files**: kebab-case (`create-deposit-form.tsx`)
+- **Hooks**: camelCase with `use` prefix (`useDeposits`)
+- **Event handlers**: `handle` prefix (`handleSubmit`, `handleClaim`)
+- **Booleans**: Verb prefix (`isLoading`, `hasError`, `canRefund`)
+- **Types/Interfaces**: PascalCase (`DepositFormProps`)
+- **Full names always**: `recipient` not `rcpt`, `deadline` not `dl`
+
+## Client vs Server Components
+
+Default to Server Components. Use `"use client"` only for:
+- `useState`, `useEffect`, or other React hooks
+- Browser APIs (localStorage, window, navigator)
+- Event handlers (onClick, onChange, onSubmit)
+- wagmi hooks (blockchain interactions)
+- Framer Motion animations
+
+## Form Handling
+
+Validate inline. Show errors immediately. Don't wait for submission.
+
+```tsx
+const [recipient, setRecipient] = useState("");
+const isValidRecipient = recipient && isAddress(recipient);
+
+<Input
+  value={recipient}
+  onChange={(event) => setRecipient(event.target.value)}
+  className={recipient && !isValidRecipient ? "border-destructive" : ""}
+/>
+{recipient && !isValidRecipient && (
+  <p className="text-xs text-destructive">{translations("invalidAddress")}</p>
+)}
+```
+
+## Transaction Flow UX
+
+Every blockchain transaction follows this pattern:
+1. **Idle**: Show the action button
+2. **Pending wallet**: "Confirm in wallet..."
+3. **Confirming**: "Processing..." with spinner
+4. **Success**: Clear success state with next action
+5. **Error**: Human-readable error with retry option
+
+## Performance
+
+1. Server Components first
+2. `useMemo` for expensive computations (don't over-memoize)
+3. Dynamic imports for heavy components
+4. Next.js Image component for images
+5. Watch bundle size — every KB matters on mobile
+6. Cookie-based SSR for wagmi to avoid hydration mismatches

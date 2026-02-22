@@ -20,6 +20,7 @@ const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.24",
     settings: {
+      viaIR: true, // Required for CryptoInheritance contract (stack too deep)
       optimizer: {
         enabled: true,
         runs: 200,
@@ -44,10 +45,7 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: {
-      arbitrumOne: ARBISCAN_API_KEY,
-      arbitrumSepolia: ARBISCAN_API_KEY,
-    },
+    apiKey: ARBISCAN_API_KEY,
   },
   sourcify: {
     enabled: true,

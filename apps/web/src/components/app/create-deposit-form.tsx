@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CLAIMABLE_ADDRESSES, CLAIMABLE_ABI, TOKENS, ERC20_ABI, isValidContractAddress } from "@/lib/contracts";
+import { formatTransactionError } from "@/lib/format-transaction-error";
 import { AlertCircle, CheckCircle2, Loader2, Info, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
@@ -58,8 +59,7 @@ export function CreateDepositForm() {
     writeContract, 
     data: hash, 
     isPending, 
-    error, 
-    reset: resetDeposit 
+    error,
   } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
@@ -69,7 +69,6 @@ export function CreateDepositForm() {
     data: approvalHash, 
     isPending: isApprovalPending, 
     error: approvalError,
-    reset: resetApproval 
   } = useWriteContract();
   const { isLoading: isApprovalConfirming, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({ 
     hash: approvalHash 
@@ -167,8 +166,7 @@ export function CreateDepositForm() {
         
         if (selectedTokenInfo && tokenAddress && contractAddress && isContractConfigured) {
           const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
-          console.log("[auto-deposit] Triggering deposit after approval");
-          
+          const startTime = 0n; // Immediate claiming
           writeContract({
             address: contractAddress,
             abi: CLAIMABLE_ABI,
@@ -177,6 +175,7 @@ export function CreateDepositForm() {
               recipient as `0x${string}`,
               tokenAddress,
               tokenAmount,
+              startTime,
               deadline,
               title,
             ],
@@ -208,13 +207,9 @@ export function CreateDepositForm() {
 
   // Handle ERC20 approval - approve exact amount for security
   const handleApprove = () => {
-    if (!tokenAddress || !contractAddress || !isContractConfigured || !parsedAmount) {
-      console.log("[handleApprove] Missing required params");
-      return;
-    }
+    if (!tokenAddress || !contractAddress || !isContractConfigured || !parsedAmount) return;
     
     setApprovalStep("approving");
-    console.log("[handleApprove] Calling writeApproval");
     
     writeApproval({
       address: tokenAddress,
@@ -227,60 +222,28 @@ export function CreateDepositForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("[handleSubmit] Called", {
-      isValidRecipient,
-      isValidAmount,
-      isValidToken,
-      isTitleValid,
-      contractAddress,
-      isContractConfigured,
-      selectedToken,
-      selectedTokenInfo,
-      tokenAddress,
-      isERC20,
-      needsApproval,
-      approvalStep,
-    });
-    
-    if (!isValidRecipient || !isValidAmount || !isValidToken || !isTitleValid || !contractAddress || !isContractConfigured) {
-      console.log("[handleSubmit] Validation failed, returning early");
-      return;
-    }
+    if (!isValidRecipient || !isValidAmount || !isValidToken || !isTitleValid || !contractAddress || !isContractConfigured) return;
 
-    // For ERC20 tokens, ensure approval is done first
-    // Skip if we just approved (approvalStep === "approved") even if needsApproval hasn't updated yet
     if (isERC20 && needsApproval && approvalStep !== "approved") {
-      console.log("[handleSubmit] Needs approval, calling handleApprove");
       handleApprove();
       return;
     }
 
-    console.log("[handleSubmit] Proceeding to deposit");
     const deadline = getDeadlineTimestamp();
+    const startTime = 0n;
 
     if (selectedToken === "ETH") {
-      console.log("[handleSubmit] Creating ETH deposit");
       writeContract({
         address: contractAddress,
         abi: CLAIMABLE_ABI,
         functionName: "depositETH",
-        args: [recipient as `0x${string}`, deadline, title],
+        args: [recipient as `0x${string}`, startTime, deadline, title],
         value: parseEther(amount),
       });
     } else {
-      if (!selectedTokenInfo || !tokenAddress) {
-        console.log("[handleSubmit] Missing selectedTokenInfo or tokenAddress, returning early");
-        return;
-      }
+      if (!selectedTokenInfo || !tokenAddress) return;
       
       const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
-      
-      console.log("[handleSubmit] Creating token deposit", {
-        contractAddress,
-        tokenAddress,
-        tokenAmount: tokenAmount.toString(),
-        deadline: deadline.toString(),
-      });
       
       writeContract({
         address: contractAddress,
@@ -290,21 +253,12 @@ export function CreateDepositForm() {
           recipient as `0x${string}`,
           tokenAddress,
           tokenAmount,
+          startTime,
           deadline,
           title,
         ],
       });
     }
-  };
-
-  const resetForm = () => {
-    setRecipient("");
-    setAmount("");
-    setSelectedToken("ETH");
-    setCustomTokenAddress("");
-    setDeadlinePreset("24h");
-    setCustomDeadline("");
-    setTitle("");
   };
 
   return (
@@ -332,12 +286,12 @@ export function CreateDepositForm() {
             )}
           </div>
 
-          {/* Title */}
+          {/* Message / Purpose */}
           <div className="space-y-2">
-            <Label htmlFor="title">{t("titleLabel")}</Label>
+            <Label htmlFor="title">{t("messageLabel")}</Label>
             <Input
               id="title"
-              placeholder={t("titlePlaceholder")}
+              placeholder={t("messagePlaceholder")}
               value={title}
               onChange={(e) => {
                 const newValue = e.target.value;
@@ -546,32 +500,7 @@ export function CreateDepositForm() {
               >
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <p className="text-sm">
-                  {/* Sanitize error message - don't expose raw blockchain errors */}
-                  {(() => {
-                    // Log raw error for debugging
-                    console.error("[Transaction Error]", error || approvalError);
-                    const msg = (error?.message || approvalError?.message)?.toLowerCase() || "";
-                    if (msg.includes("user rejected") || msg.includes("user denied")) {
-                      return "Transaction was rejected by user";
-                    }
-                    if (msg.includes("insufficient")) {
-                      return "Insufficient balance for this transaction";
-                    }
-                    // Ledger-specific errors
-                    if (msg.includes("0x6b0c") || msg.includes("0x6700") || msg.includes("no app") || msg.includes("device is locked") || msg.includes("locked device")) {
-                      return "Ledger: Please unlock your device and open the Ethereum app";
-                    }
-                    if (msg.includes("disconnected") || msg.includes("transport") || msg.includes("hid") || msg.includes("cannot open")) {
-                      return "Ledger: Device disconnected. Please reconnect your Ledger and open the Ethereum app";
-                    }
-                    if (msg.includes("0x6985") || msg.includes("condition not satisfied")) {
-                      return "Ledger: Transaction rejected on device";
-                    }
-                    if (msg.includes("blind signing") || msg.includes("enable contract data") || msg.includes("contract data")) {
-                      return "Ledger: Please enable 'Blind signing' in the Ethereum app settings";
-                    }
-                    return "Transaction failed. Please try again.";
-                  })()}
+                  {formatTransactionError(error || approvalError)}
                 </p>
               </motion.div>
             )}

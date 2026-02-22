@@ -84,16 +84,6 @@
   @apply bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
 }
 
-/* Glass effect */
-.glass {
-  @apply bg-white/5 backdrop-blur-xl border border-white/10;
-}
-
-/* Glow effect */
-.glow {
-  box-shadow: 0 0 60px -15px rgba(16, 185, 129, 0.3);
-}
-
 /* Grid pattern background */
 .grid-pattern {
   background-image: 
@@ -108,8 +98,4 @@
   opacity: 0.03;
   pointer-events: none;
 }
-
-
-
-
 

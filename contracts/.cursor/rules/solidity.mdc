@@ -1,0 +1,115 @@
+---
+description: Solidity conventions, security patterns, and gas optimization
+globs: ["contracts/**/*.sol"]
+---
+
+# Solidity Development Rules
+
+## Context
+
+These contracts ARE the protocol. They hold real money. They cannot be patched after deployment.
+
+**Contracts**:
+- `ExclusiveClaim.sol` — Lockd Payments (base escrow)
+- `CryptoInheritance.sol` — Lockd Inheritance (extends ExclusiveClaim)
+- `FileCertification.sol` — Lockd Certify (standalone)
+
+When modifying `ExclusiveClaim`, always verify `CryptoInheritance` still works — it inherits everything.
+
+## File Structure — Follow This Order
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+// 1. Imports (OpenZeppelin first, then local)
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+/// @title ContractName
+/// @notice One-line description
+contract ContractName is ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
+    // 2. Type declarations (structs, enums)
+    // 3. State variables
+    // 4. Events
+    // 5. Errors (custom errors, always)
+    // 6. Modifiers
+    // 7. Constructor
+    // 8. External functions
+    // 9. Public functions
+    // 10. Internal functions
+    // 11. Private functions
+    // 12. View/Pure functions
+}
+```
+
+## Naming Conventions
+
+- **Contracts**: PascalCase (`ExclusiveClaim`)
+- **Functions**: camelCase (`depositETH`, `claimWithSecret`)
+- **Constants**: SCREAMING_SNAKE_CASE (`MAX_TITLE_LENGTH`)
+- **State variables**: camelCase (`depositCount`)
+- **Events**: PascalCase (`DepositCreated`)
+- **Custom errors**: PascalCase (`ZeroAmount`, `NotClaimant`)
+- **Parameters**: camelCase, underscore prefix only for storage conflicts
+- **Mapping keys**: Descriptive (`deposits[depositId]`, not `deposits[id]`)
+
+## Security Patterns — Mandatory
+
+1. **Custom Errors** — Always. Never `require` with strings.
+   ```solidity
+   error ZeroAmount();
+   if (amount == 0) revert ZeroAmount();
+   ```
+
+2. **Checks-Effects-Interactions** — Every state-changing function.
+   ```solidity
+   function withdraw() external nonReentrant {
+       // CHECKS
+       if (balances[msg.sender] == 0) revert ZeroBalance();
+       // EFFECTS
+       uint256 amount = balances[msg.sender];
+       balances[msg.sender] = 0;
+       // INTERACTIONS
+       (bool success, ) = msg.sender.call{value: amount}("");
+       require(success, "ETH transfer failed");
+   }
+   ```
+
+3. **ReentrancyGuard** — On every function with external calls or value transfers.
+
+4. **SafeERC20** — For every token transfer. Handle fee-on-transfer by checking balance before/after.
+
+5. **Input Validation** — Top of every public/external function:
+   - Zero address checks
+   - Zero amount checks
+   - Deadline sanity (must be in the future)
+   - Array length validation for batch operations
+
+## Gas Optimization
+
+- Use `calldata` for read-only array/struct parameters
+- Use `storage` pointer for multiple reads from the same struct
+- Cache array length in loops: `uint256 length = array.length;`
+- Use `++i` instead of `i++`
+- Pack struct variables to minimize storage slots
+- Use `unchecked` only for arithmetic that provably cannot overflow
+
+## Documentation (NatSpec) — Required
+
+Every public and external function must have NatSpec:
+
+```solidity
+/// @notice Creates a new ETH deposit for a specific claimant
+/// @param claimant The address that can claim this deposit
+/// @param deadline The timestamp after which depositor can refund
+/// @return depositId The ID of the newly created deposit
+function depositETH(
+    address claimant,
+    uint256 deadline,
+    uint256 startTime,
+    string calldata title
+) external payable nonReentrant returns (uint256 depositId);
+```

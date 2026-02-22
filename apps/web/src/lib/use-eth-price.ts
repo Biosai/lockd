@@ -65,4 +65,3 @@ export function useEthPrice(): PriceData {
 
   return { ethPrice, isLoading, error };
 }
-

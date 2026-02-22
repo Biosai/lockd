@@ -1,0 +1,77 @@
+---
+description: Tailwind CSS, dark mode, animation, accessibility, and UI primitives
+globs: ["apps/web/src/components/ui/**/*", "apps/web/src/**/*.css", "apps/web/tailwind.config.*", "apps/web/postcss.config.*"]
+---
+
+# Styling & Accessibility Rules
+
+## Tailwind CSS
+
+```tsx
+// Use semantic color tokens that respect dark mode
+<div className="flex items-center gap-4 rounded-lg bg-card p-4 text-card-foreground">
+
+// Never use inline styles
+// Never use arbitrary values when a design token exists
+```
+
+## Dark Mode
+
+- The app defaults to dark mode (set in layout)
+- Use CSS variables that auto-adapt: `bg-background`, `text-foreground`, `bg-card`
+- Use `dark:` variant only when the variable doesn't cover the case
+- Test every component in dark mode — it's the default experience
+
+## Animation
+
+Use Framer Motion for transitions that improve perceived performance:
+
+```tsx
+import { motion, AnimatePresence } from "framer-motion";
+
+<AnimatePresence>
+  {isVisible && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+    >
+      Content
+    </motion.div>
+  )}
+</AnimatePresence>
+```
+
+Don't animate for the sake of animating. Animations should indicate state changes, guide attention, or reduce perceived latency.
+
+## UI Primitives
+
+All UI primitives in `components/ui/` are built on Radix UI:
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+
+<Button variant="default" size="lg" disabled={isLoading}>
+  {isLoading ? <Loader2 className="animate-spin" /> : translations("submit")}
+</Button>
+```
+
+## Icons
+
+Use Lucide React for all icons:
+
+```tsx
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+
+<AlertCircle className="h-5 w-5 text-destructive" />
+```
+
+## Accessibility
+
+- Use semantic HTML elements (`nav`, `main`, `section`, `article`)
+- Add proper aria labels for interactive elements
+- Ensure full keyboard navigation
+- Maintain WCAG AA color contrast ratios
+- Use Radix UI primitives — they handle focus management and screen readers

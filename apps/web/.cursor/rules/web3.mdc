@@ -1,0 +1,94 @@
+---
+description: Web3 integration patterns — wagmi, contract interactions, error handling
+globs: ["apps/web/src/lib/contracts.ts", "apps/web/src/lib/wagmi.ts", "apps/web/src/lib/use-*.ts", "apps/web/src/components/app/**/*", "apps/web/src/app/app/**/*", "apps/web/src/app/claim/**/*"]
+---
+
+# Web3 Integration Rules
+
+## Contract Interactions
+
+```tsx
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { CLAIMABLE_ABI, CLAIMABLE_ADDRESSES } from "@/lib/contracts";
+
+function DepositComponent() {
+  const chainId = useChainId();
+  const contractAddress = CLAIMABLE_ADDRESSES[chainId];
+
+  const {
+    writeContract,
+    data: transactionHash,
+    isPending,
+    error
+  } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash: transactionHash
+  });
+
+  const handleDeposit = () => {
+    writeContract({
+      address: contractAddress,
+      abi: CLAIMABLE_ABI,
+      functionName: "depositETH",
+      args: [recipient, deadline, startTime, title],
+      value: parseEther(amount),
+    });
+  };
+}
+```
+
+## Error Handling — This Is Product UX
+
+Blockchain errors are cryptic. Users don't know what "execution reverted" means. Every error must be translated to human language:
+
+```tsx
+const getErrorMessage = (error: Error | null): string | null => {
+  if (!error) return null;
+  const message = error.message.toLowerCase();
+
+  if (message.includes("user rejected")) return translations("errorRejected");
+  if (message.includes("insufficient")) return translations("errorInsufficientBalance");
+  if (message.includes("ledger")) return translations("errorLedger");
+
+  return translations("errorGeneric");
+};
+```
+
+Rules:
+- Never show raw blockchain errors to users
+- Always provide actionable next steps
+- Handle Ledger-specific errors (blind signing, locked device)
+- Handle network switching errors gracefully
+- Log raw errors to console, show translated errors to users
+
+## Multi-Chain Support
+
+```tsx
+import { isValidContractAddress } from "@/lib/contracts";
+
+const isContractConfigured = isValidContractAddress(contractAddress);
+
+if (!isContractConfigured) {
+  return <NetworkNotSupported />;
+}
+```
+
+Always verify the contract exists on the current chain before rendering interaction UI.
+
+## Contract Configuration
+
+Contract addresses are loaded from environment variables per chain:
+- `NEXT_PUBLIC_CLAIMABLE_ADDRESS_ARBITRUM` / `_ARBITRUM_SEPOLIA` — ExclusiveClaim
+- `NEXT_PUBLIC_INHERITANCE_ADDRESS_ARBITRUM` / `_ARBITRUM_SEPOLIA` — CryptoInheritance
+- `NEXT_PUBLIC_CERTIFICATION_ADDRESS_ARBITRUM` / `_ARBITRUM_SEPOLIA` — FileCertification
+
+See `DEPLOYMENT.md` for current addresses.
+
+## Security
+
+- Validate all inputs before sending to contracts
+- Never expose raw blockchain errors (can leak internal state)
+- Always verify contract addresses match the current chain
+- Client-side file hashing only — files never leave the device
+- Never store private keys or sensitive data in localStorage
