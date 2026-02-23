@@ -52,6 +52,8 @@ export function CreateDepositForm() {
   const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>("24h");
   const [customDeadline, setCustomDeadline] = useState("");
   const [title, setTitle] = useState("");
+  const [hasStartTime, setHasStartTime] = useState(false);
+  const [customStartTime, setCustomStartTime] = useState("");
   const [approvalStep, setApprovalStep] = useState<ApprovalStep>("idle");
   
   // Deposit transaction
@@ -166,7 +168,9 @@ export function CreateDepositForm() {
         
         if (selectedTokenInfo && tokenAddress && contractAddress && isContractConfigured) {
           const tokenAmount = parseUnits(amount, selectedTokenInfo.decimals);
-          const startTime = 0n; // Immediate claiming
+          const startTime = hasStartTime && customStartTime
+            ? BigInt(Math.floor(new Date(customStartTime).getTime() / 1000))
+            : 0n;
           writeContract({
             address: contractAddress,
             abi: CLAIMABLE_ABI,
@@ -183,7 +187,7 @@ export function CreateDepositForm() {
         }
       }, 100);
     }
-  }, [isApprovalSuccess, approvalStep, refetchAllowance, writeContract, selectedTokenInfo, tokenAddress, contractAddress, isContractConfigured, amount, recipient, title, deadlinePreset, customDeadline]);
+  }, [isApprovalSuccess, approvalStep, refetchAllowance, writeContract, selectedTokenInfo, tokenAddress, contractAddress, isContractConfigured, amount, recipient, title, deadlinePreset, customDeadline, hasStartTime, customStartTime]);
 
   // Reset approval step when token or amount changes
   useEffect(() => {
@@ -203,6 +207,11 @@ export function CreateDepositForm() {
       return BigInt(Math.floor(new Date(customDeadline).getTime() / 1000));
     }
     return BigInt(Math.floor(Date.now() / 1000) + DEADLINE_PRESETS[deadlinePreset].seconds);
+  };
+
+  const getStartTimeTimestamp = (): bigint => {
+    if (!hasStartTime || !customStartTime) return 0n;
+    return BigInt(Math.floor(new Date(customStartTime).getTime() / 1000));
   };
 
   // Handle ERC20 approval - approve exact amount for security
@@ -230,7 +239,7 @@ export function CreateDepositForm() {
     }
 
     const deadline = getDeadlineTimestamp();
-    const startTime = 0n;
+    const startTime = getStartTimeTimestamp();
 
     if (selectedToken === "ETH") {
       writeContract({
@@ -422,12 +431,61 @@ export function CreateDepositForm() {
             </AnimatePresence>
           </div>
 
+          {/* Claim Start Time (optional) */}
+          <div className="space-y-2">
+            <Label>{t("startTimeLabel")}</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={!hasStartTime ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setHasStartTime(false);
+                  setCustomStartTime("");
+                }}
+                className="text-xs"
+              >
+                {t("startTimeImmediate")}
+              </Button>
+              <Button
+                type="button"
+                variant={hasStartTime ? "default" : "outline"}
+                size="sm"
+                onClick={() => setHasStartTime(true)}
+                className="text-xs"
+              >
+                {t("startTimeScheduled")}
+              </Button>
+            </div>
+            <AnimatePresence>
+              {hasStartTime && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <Input
+                    type="datetime-local"
+                    value={customStartTime}
+                    onChange={(event) => setCustomStartTime(event.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("startTimeHint")}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Info Box */}
           <div className="flex items-start gap-3 rounded-lg bg-secondary/50 p-4">
             <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground">
               <p>
-                {t("infoText")}
+                {hasStartTime && customStartTime ? t("infoTextWithStartTime") : t("infoText")}
               </p>
             </div>
           </div>

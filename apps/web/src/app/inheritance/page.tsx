@@ -164,7 +164,7 @@ export default function InheritancePage() {
               Full UI Coming Soon
             </h2>
             <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-              The smart contract is ready and audited. We're building a beautiful interface 
+              The smart contract is ready and audited. We&apos;re building a beautiful interface
               to make creating and managing inheritance plans as simple as possible.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
