@@ -1,0 +1,105 @@
+<svg viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#030711" />
+      <stop offset="50%" stop-color="#0A1628" />
+      <stop offset="100%" stop-color="#030711" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#2DD4BF" />
+    </linearGradient>
+    <radialGradient id="glowTopRight" cx="85%" cy="15%" r="40%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glowBottomLeft" cx="15%" cy="85%" r="40%">
+      <stop offset="0%" stop-color="#14B8A6" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#14B8A6" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)" />
+  <rect width="1200" height="630" fill="url(#glowTopRight)" />
+  <rect width="1200" height="630" fill="url(#glowBottomLeft)" />
+
+  <!-- Left content group -->
+  <g transform="translate(100, 180)">
+    <!-- Logo + wordmark inline -->
+    <rect width="56" height="56" rx="14" fill="#10B981" />
+    <path
+      d="M18 28V22C18 16.5 22.5 12 28 12C33.5 12 38 16.5 38 22V28"
+      stroke="white"
+      stroke-width="5"
+      stroke-linecap="round"
+    />
+    <rect x="14" y="26" width="28" height="23" rx="5.5" fill="white" />
+    <circle cx="28" cy="35.5" r="3.5" fill="#10B981" />
+    <rect x="26" y="35.5" width="4" height="7" rx="2" fill="#10B981" />
+
+    <text
+      x="72"
+      y="42"
+      font-family="'Geist Sans', 'Inter', system-ui, -apple-system, sans-serif"
+      font-weight="700"
+      font-size="42"
+      letter-spacing="-1.5"
+      fill="white"
+    >Lockd</text>
+  </g>
+
+  <!-- Headline -->
+  <text
+    x="100"
+    y="330"
+    font-family="'Geist Sans', 'Inter', system-ui, -apple-system, sans-serif"
+    font-weight="700"
+    font-size="52"
+    letter-spacing="-1.5"
+    fill="white"
+  >Lock crypto for anyone.</text>
+
+  <text
+    x="100"
+    y="390"
+    font-family="'Geist Sans', 'Inter', system-ui, -apple-system, sans-serif"
+    font-weight="700"
+    font-size="52"
+    letter-spacing="-1.5"
+    fill="url(#accentGradient)"
+  >Get it back if unclaimed.</text>
+
+  <!-- Subline -->
+  <text
+    x="100"
+    y="445"
+    font-family="'Geist Sans', 'Inter', system-ui, -apple-system, sans-serif"
+    font-weight="400"
+    font-size="22"
+    fill="#94A3B8"
+  >Trustless escrow. On-chain. No middleman.</text>
+
+  <!-- URL -->
+  <text
+    x="100"
+    y="560"
+    font-family="'Geist Mono', 'JetBrains Mono', monospace"
+    font-weight="400"
+    font-size="18"
+    fill="#64748B"
+  >lockd.app</text>
+
+  <!-- Decorative lock pattern (right side) -->
+  <g transform="translate(880, 180)" opacity="0.06">
+    <path d="M60 108V80C60 53.5 81.5 32 108 32C134.5 32 156 53.5 156 80V108" stroke="white" stroke-width="16" stroke-linecap="round" />
+    <rect x="40" y="100" width="136" height="112" rx="24" fill="white" />
+  </g>
+  <g transform="translate(950, 280)" opacity="0.04">
+    <path d="M40 72V53C40 35.3 54.3 21 72 21C89.7 21 104 35.3 104 53V72" stroke="white" stroke-width="12" stroke-linecap="round" />
+    <rect x="27" y="67" width="90" height="75" rx="16" fill="white" />
+  </g>
+
+  <!-- Top accent line -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accentGradient)" />
+</svg>

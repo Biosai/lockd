@@ -1,0 +1,85 @@
+<svg viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F8FAFC" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#14B8A6" />
+    </linearGradient>
+    <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0" />
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M 64 0 L 0 0 0 64" fill="none" stroke="#0A0A0A" stroke-opacity="0.04" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+
+  <!-- Ambient glow -->
+  <ellipse cx="600" cy="280" rx="500" ry="350" fill="url(#glowGradient)" />
+
+  <!-- Logo mark -->
+  <g transform="translate(480, 130)">
+    <rect width="120" height="120" rx="30" fill="#10B981" />
+    <path
+      d="M38 60V48C38 39.7 44.7 33 53 33C61.3 33 68 39.7 68 48V60"
+      stroke="white"
+      stroke-width="8"
+      stroke-linecap="round"
+    />
+    <rect x="30" y="55" width="52" height="43" rx="10" fill="white" />
+    <circle cx="56" cy="73" r="6.5" fill="#10B981" />
+    <rect x="52.5" y="73" width="7" height="13" rx="3.5" fill="#10B981" />
+  </g>
+
+  <!-- Wordmark -->
+  <text
+    x="600"
+    y="330"
+    text-anchor="middle"
+    font-family="'Geist Sans', 'Inter', system-ui, -apple-system, sans-serif"
+    font-weight="700"
+    font-size="72"
+    letter-spacing="-2"
+    fill="#0A0A0A"
+  >Lockd</text>
+
+  <!-- Tagline -->
+  <text
+    x="600"
+    y="385"
+    text-anchor="middle"
+    font-family="'Geist Sans', 'Inter', system-ui, -apple-system, sans-serif"
+    font-weight="400"
+    font-size="24"
+    fill="#64748B"
+  >The trust layer for crypto</text>
+
+  <!-- Accent line -->
+  <rect x="525" y="405" width="150" height="3" rx="1.5" fill="url(#accentGradient)" opacity="0.5" />
+
+  <!-- Products -->
+  <g font-family="'Geist Sans', 'Inter', system-ui, -apple-system, sans-serif" font-size="16" fill="#94A3B8">
+    <text x="330" y="500" text-anchor="middle">Payments</text>
+    <text x="600" y="500" text-anchor="middle">Inheritance</text>
+    <text x="870" y="500" text-anchor="middle">Certify</text>
+  </g>
+
+  <!-- Product dots -->
+  <circle cx="275" cy="496" r="4" fill="#10B981" />
+  <circle cx="545" cy="496" r="4" fill="#10B981" />
+  <circle cx="820" cy="496" r="4" fill="#10B981" />
+
+  <!-- Divider lines between products -->
+  <line x1="430" y1="485" x2="430" y2="510" stroke="#E2E8F0" stroke-width="1" />
+  <line x1="770" y1="485" x2="770" y2="510" stroke="#E2E8F0" stroke-width="1" />
+
+  <!-- Bottom border accent -->
+  <rect x="0" y="625" width="1200" height="5" fill="url(#accentGradient)" />
+</svg>
