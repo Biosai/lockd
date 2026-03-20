@@ -9,6 +9,7 @@ export const metadata: Metadata = {
     title: "Lockd Payments | Trustless Crypto Escrow",
     description:
       "Lock crypto for anyone. Recipient claims, or you refund after the deadline. Trustless, on-chain.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lockd Payments — Trustless crypto escrow" }],
   },
 };
 

@@ -9,6 +9,7 @@ export const metadata: Metadata = {
     title: "Lockd Certify | Blockchain File Certification",
     description:
       "Create immutable proof of file existence on the blockchain. Your file never leaves your device.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lockd Certify — Blockchain file certification" }],
   },
 };
 

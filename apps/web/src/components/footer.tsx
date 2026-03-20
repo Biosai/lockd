@@ -28,19 +28,19 @@ export function Footer() {
               href="/payments"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              Payments
+              {t("payments")}
             </Link>
             <Link
               href="/inheritance"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              Inheritance
+              {t("inheritance")}
             </Link>
             <Link
               href="/certify"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              Certify
+              {t("certify")}
             </Link>
             <Link
               href="/app"

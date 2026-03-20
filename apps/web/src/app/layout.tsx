@@ -14,6 +14,7 @@ const GTM_ID = "GTM-5X84SCQ8";
 const GA_ID = "G-NB5MV9B2NX";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://lockd.world"),
   title: "Lockd | Lock crypto for anyone",
   description:
     "The trustless way to send crypto. Lock funds for a recipient with automatic refund protection. No middleman, purely on-chain.",
@@ -35,12 +36,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Lockd",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lockd — The trust layer for crypto" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Lockd | Lock crypto for anyone",
     description:
       "Lock crypto for anyone. Get it back if unclaimed. Trustless, on-chain.",
+    images: ["/og-image.png"],
   },
 };
 

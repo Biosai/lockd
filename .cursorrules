@@ -47,6 +47,8 @@ Before any change is considered complete:
 - **Contracts**: `contracts/` — Solidity ^0.8.24, Hardhat, OpenZeppelin v5
 - **Web App**: `apps/web/` — Next.js 16, React 19, wagmi v2, RainbowKit
 - **Networks**: Arbitrum mainnet (42161) + Arbitrum Sepolia (421614)
+- **Production URL**: `https://lockd.world`
+- **GitHub**: `https://github.com/Biosai/lockd`
 
 ## Naming Standards
 

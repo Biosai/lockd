@@ -19,6 +19,9 @@
   },
   "footer": {
     "tagline": "Transfert de valeur trustless, sécurisé par la blockchain.",
+    "payments": "Paiements",
+    "inheritance": "Héritage",
+    "certify": "Certifier",
     "howItWorks": "Comment ça marche",
     "useCases": "Cas d'usage",
     "launchApp": "Lancer l'App",
