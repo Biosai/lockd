@@ -1,0 +1,51 @@
+# Dependabot configuration.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Grouped on purpose: minor/patch bumps arrive as ONE weekly PR per ecosystem so
+# the review queue stays readable. Majors and security advisories still open
+# individually (security updates bypass grouping by design).
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directories:
+      - "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Brussels
+    open-pull-requests-limit: 4
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+      include: scope
+    groups:
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Brussels
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
