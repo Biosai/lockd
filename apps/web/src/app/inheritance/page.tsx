@@ -159,7 +159,7 @@ export default function InheritancePage() {
 
         {/* Coming Soon Banner */}
         <section className="mx-auto max-w-7xl px-6 py-16">
-          <div className="rounded-2xl border border-border/50 bg-gradient-to-r from-primary/5 to-primary/10 p-8 md:p-12 text-center">
+          <div className="rounded-2xl border border-border/50 bg-linear-to-r from-primary/5 to-primary/10 p-8 md:p-12 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
               Full UI Coming Soon
             </h2>
