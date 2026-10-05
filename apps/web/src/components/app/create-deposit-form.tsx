@@ -482,7 +482,7 @@ export function CreateDepositForm() {
 
           {/* Info Box */}
           <div className="flex items-start gap-3 rounded-lg bg-secondary/50 p-4">
-            <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <div className="text-sm text-muted-foreground">
               <p>
                 {hasStartTime && customStartTime ? t("infoTextWithStartTime") : t("infoText")}
@@ -499,7 +499,7 @@ export function CreateDepositForm() {
                 exit={{ opacity: 0, height: 0 }}
                 className="flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive"
               >
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <AlertCircle className="h-5 w-5 shrink-0" />
                 <p className="text-sm">
                   Contract not configured for this network. Please contact the administrator.
                 </p>
@@ -516,7 +516,7 @@ export function CreateDepositForm() {
                 exit={{ opacity: 0, height: 0 }}
                 className="flex items-center gap-2 rounded-lg bg-amber-500/10 p-4 text-amber-600 dark:text-amber-400"
               >
-                <ShieldCheck className="h-5 w-5 flex-shrink-0" />
+                <ShieldCheck className="h-5 w-5 shrink-0" />
                 <div className="text-sm">
                   <p className="font-medium">Token approval required</p>
                   <p className="text-muted-foreground">
@@ -536,7 +536,7 @@ export function CreateDepositForm() {
                 exit={{ opacity: 0, height: 0 }}
                 className="flex items-center gap-2 rounded-lg bg-primary/10 p-4 text-primary"
               >
-                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
                 <div className="text-sm">
                   <p className="font-medium">Token approved!</p>
                   <p className="text-muted-foreground">
@@ -556,7 +556,7 @@ export function CreateDepositForm() {
                 exit={{ opacity: 0, height: 0 }}
                 className="flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive"
               >
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <AlertCircle className="h-5 w-5 shrink-0" />
                 <p className="text-sm">
                   {formatTransactionError(error || approvalError)}
                 </p>
@@ -573,7 +573,7 @@ export function CreateDepositForm() {
                 exit={{ opacity: 0, height: 0 }}
                 className="flex items-center gap-2 rounded-lg bg-primary/10 p-4 text-primary"
               >
-                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
                 <div className="text-sm">
                   <p className="font-medium">{t("successTitle")}</p>
                   <p className="text-muted-foreground">

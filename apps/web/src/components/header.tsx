@@ -26,7 +26,7 @@ export function Header() {
   const isAppPage = pathname.startsWith("/app");
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[100]">
+    <header className="fixed top-0 left-0 right-0 z-100">
       <div className="border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           {/* Logo */}

@@ -521,7 +521,7 @@ export default function Home() {
 
         {/* CTA Section */}
         <section className="relative py-20 md:py-32">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary/5 to-transparent" />
           <div className="relative mx-auto max-w-3xl px-6 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

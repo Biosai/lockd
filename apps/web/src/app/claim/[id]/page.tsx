@@ -213,7 +213,7 @@ export default function ClaimPage() {
             ) : (
               <Card className="border-border/40 overflow-hidden">
                 {/* Header with gift icon */}
-                <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-8 text-center">
+                <div className="bg-linear-to-br from-primary/20 to-primary/5 p-8 text-center">
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20">
                     <Gift className="h-8 w-8 text-primary" />
                   </div>
@@ -247,10 +247,10 @@ export default function ClaimPage() {
                   <div className="space-y-4">
                     {depositData.title && (
                       <div className="flex items-start gap-3 rounded-lg bg-primary/5 p-3">
-                        <MessageSquare className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        <MessageSquare className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-muted-foreground">{t("message")}</p>
-                          <p className="text-sm font-medium break-words">{depositData.title}</p>
+                          <p className="text-sm font-medium wrap-break-word">{depositData.title}</p>
                         </div>
                       </div>
                     )}
@@ -299,7 +299,7 @@ export default function ClaimPage() {
                       <>
                         {error && (
                           <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 p-4 text-destructive">
-                            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                            <AlertCircle className="h-5 w-5 shrink-0" />
                             <p className="text-sm">
                               {formatTransactionError(error)}
                             </p>
