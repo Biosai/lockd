@@ -30,7 +30,7 @@
     "solhint": "^6.2.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24"
   },
   "repository": {
     "type": "git",
