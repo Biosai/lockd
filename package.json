@@ -22,7 +22,7 @@
     "deploy:arbitrum-sepolia": "npx hardhat run scripts/deploy.ts --network arbitrumSepolia"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-ledger": "^1.2.2",
+    "@nomicfoundation/hardhat-ledger": "^3.1.0",
     "@nomicfoundation/hardhat-toolbox": "^6.1.2",
     "@openzeppelin/contracts": "^5.6.1",
     "dotenv": "^18.0.5",
